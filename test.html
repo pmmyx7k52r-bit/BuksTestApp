@@ -3,8 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Belastungskonto 3.7.2</title>
-
+<title>Belastungskonto 3.7.4</title>
 <style>
 :root{
 --green:#34c759; --yellow:#ffcc00; --orange:#ff9500; --red:#ff3b30;
@@ -19,7 +18,7 @@ button:active{opacity:0.7;}
 .btn-add{background:var(--green);width:auto;padding:10px 14px;margin-top:6px;}
 .btn-pause{background:var(--pause);margin-bottom:4px;display:none}
 .pause-hint{display:none;font-size:12px;color:#555;background:#e5e5ea;padding:8px;border-radius:8px;margin-bottom:12px;line-height:1.4;border-left:4px solid var(--pause);}
-#pacingHeader{position:fixed;top:0;left:0;width:100%;padding:10px;text-align:center;font-weight:800;z-index:2000;display:none;box-shadow:0 2px 10px rgba(0,0,0,0.2);box-sizing:border-box;}
+#pacingHeader{position:fixed;top:0;left:0;width:100%;padding:10px;text-align:center;font-weight:800;z-index:2000;display:none;box-shadow: 0 2px 10px rgba(0,0,0,0.2);box-sizing: border-box;}
 .warn-rot{background:var(--red);color:#fff;border-bottom:2px solid rgba(0,0,0,0.2);}
 .warn-pene{background:#000;color:var(--yellow);border-bottom:3px solid var(--red);}
 .blink{animation:blinker 0.9s linear infinite;}
@@ -43,7 +42,6 @@ input,select{width:100%;padding:12px;border:1px solid #d1d1d6;border-radius:10px
 .flex-btn{flex:0.5;}
 </style>
 </head>
-
 <body>
 
 <div id="pacingHeader"></div>
@@ -53,16 +51,16 @@ input,select{width:100%;padding:12px;border:1px solid #d1d1d6;border-radius:10px
 <div id="boxRest" class="status bg-green">Rest-Energie<span id="valRest" class="big">0</span><span id="statusText"></span></div>
 </div>
 
-<button id="pauseBtn" class="btn-pause" onclick="doPause()">☕ PAUSE (+3 & Block-Reset)</button>
+<button type="button" id="pauseBtn" class="btn-pause" onclick="doPause()">☕ PAUSE (+3 & Block-Reset)</button>
 <div id="pauseHint" class="pause-hint">
-<strong>Hinweis:</strong> Ruhe, um den Puls zu normalisieren ist KEINE Pause! Sondern NOTWENDIG!
+<strong>Hinweis:</strong> Ruhe zur Puls-Normalisierung ist KEINE Pause! Sondern NOTWENDIG!
 </div>
 
 <div id="rollingWarnBox" class="rolling-warn">⚠️ Achtung: Mehrere Tage im roten Bereich!<br>Auf Rolling PENE aufpassen!</div>
 
-<div class="card">
+<div class="card" id="startCard">
 <h3>Morgen-Check</h3>
-<input id="sleep" type="number" placeholder="Schlafindex (z.B. 65)">
+<input id="sleep" type="number" inputmode="numeric" placeholder="Schlafindex (z.B. 65)">
 <select id="feeling">
 <option value="" disabled selected>Wie fühlst du dich?</option>
 <option value="12">Es geht mir gut (+12)</option>
@@ -70,16 +68,16 @@ input,select{width:100%;padding:12px;border:1px solid #d1d1d6;border-radius:10px
 <option value="-6">Starker Druck/Nebel, es geht irgendwie (-6)</option>
 <option value="-12">Schwerer Druck, Pfeifen, es geht nichts (-12)</option>
 </select>
-<button class="btn-start" onclick="startDay()">Tag starten</button>
-<button class="btn-reset" onclick="resetDay()">Guten Morgen! (Neuer Tag)</button>
+<button type="button" class="btn-start" onclick="startDay()">Tag starten</button>
+<button type="button" class="btn-reset" onclick="resetDay()">Guten Morgen! (Neuer Tag)</button>
 </div>
 
 <div class="card">
 <h3>Belastungskatalog (Dauerhaft)</h3>
 <div class="add-input-row">
 <input id="loadName" class="flex-name" placeholder="Aktivität">
-<input id="loadVal" class="flex-pts" type="number" placeholder="Pkt.">
-<button class="btn-add flex-btn" onclick="addCatalogEntry()">Neu</button>
+<input id="loadVal" class="flex-pts" type="number" inputmode="numeric" placeholder="Pkt.">
+<button type="button" class="btn-add flex-btn" onclick="addCatalogEntry()">Neu</button>
 </div>
 <div id="catalog" style="margin-top:15px;"></div>
 </div>
@@ -87,7 +85,7 @@ input,select{width:100%;padding:12px;border:1px solid #d1d1d6;border-radius:10px
 <div class="card">
 <h3>Heutige Aktivitäten</h3>
 <div id="dayList"></div>
-<button onclick="undoLast()" style="background:var(--orange);width:100%;padding:14px;border:none;border-radius:12px;font-weight:700;color:#fff;margin-top:15px">Letzten Eintrag rückgängig</button>
+<button type="button" onclick="undoLast()" style="background:var(--orange);width:100%;padding:14px;border:none;border-radius:12px;font-weight:700;color:#fff;margin-top:15px">Letzten Eintrag rückgängig</button>
 </div>
 
 <script>
@@ -99,15 +97,23 @@ let loads = JSON.parse(localStorage.getItem(STORAGE_LOADS)) || [{n:"Spaziergang"
 let state = JSON.parse(localStorage.getItem(STORAGE_STATE)) || {max:0,cur:0,block:0,used:[],date:"",pene:false};
 let history = JSON.parse(localStorage.getItem(STORAGE_HISTORY)) || [];
 
-// Audio-Setup
 let audioCtx = null;
 function initAudio() {
-if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-if (audioCtx.state === 'suspended') audioCtx.resume();
+try {
+const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+if (AudioContextClass && !audioCtx) {
+audioCtx = new AudioContextClass();
+}
+if (audioCtx && audioCtx.state === 'suspended') {
+audioCtx.resume();
+}
+} catch (e) { console.error("Audio Error", e); }
 }
 
 function playWarningSound() {
+try {
 initAudio();
+if (!audioCtx) return;
 const osc = audioCtx.createOscillator();
 const gain = audioCtx.createGain();
 osc.type = 'sine';
@@ -118,13 +124,14 @@ osc.connect(gain);
 gain.connect(audioCtx.destination);
 osc.start();
 osc.stop(audioCtx.currentTime + 0.5);
+} catch (e) { console.error("Sound Playback Error", e); }
 }
 
 window.onload = function() {
 checkRollingPene();
 const today = new Date().toDateString();
 if (state.date && state.date !== today && state.max > 0) {
-if (confirm("Guten Morgen! Neuen Tag beginnen?")) {
+if (confirm("Neuer Tag! Archivieren und zurücksetzen?")) {
 archiveDay();
 resetDayInternal();
 }
@@ -137,17 +144,19 @@ renderCatalog();
 };
 
 function checkRollingPene() {
-const redDays = history.filter(d => d).length;
-const lastTwoNotRed = history.length >= 2 && !history[history.length-1] && !history[history.length-2];
-document.getElementById("rollingWarnBox").style.display =
-(redDays >= 3 && !lastTwoNotRed) ? "block" : "none"
+const redDays = history.filter(d => d === true).length;
+const lastTwoNotRed = history.length >= 2 && history[history.length-1] === false && history[history.length-2] === false;
+const warnBox = document.getElementById("rollingWarnBox");
+if(warnBox) warnBox.style.display = (redDays >= 3 && !lastTwoNotRed) ? "block" : "none"
 }
 
 function archiveDay() {
-const percent = state.max > 0 ? (state.cur / state.max) * 100 : 100;
+if (state.max > 0) {
+const percent = (state.cur / state.max) * 100;
 history.push(percent <= 25);
 if (history.length > 7) history.shift();
 localStorage.setItem(STORAGE_HISTORY, JSON.stringify(history));
+}
 }
 
 function saveAll() {
@@ -157,16 +166,23 @@ localStorage.setItem(STORAGE_STATE, JSON.stringify(state));
 
 function startDay() {
 initAudio();
-const s = +document.getElementById("sleep").value;
-const fStr = document.getElementById("feeling").value;
-if (fStr === "" || isNaN(s) || s <= 0) return alert("Bitte gültigen Schlafindex (>0) und Gefühl eingeben.");
-state.max = Math.max(1, s + (+fStr));
+const sVal = document.getElementById("sleep").value;
+const fVal = document.getElementById("feeling").value;
+const s = parseInt(sVal, 10);
+const f = parseInt(fVal, 10);
+if (isNaN(s) || isNaN(f) || s <= 0) {
+alert("Bitte Schlafindex (>0) und Gefühl wählen.");
+return;
+}
+state.max = Math.max(1, s + f);
 state.cur = state.max;
 state.used = [];
 state.block = 0;
 state.pene = false;
 state.date = new Date().toDateString();
-showMainUI(); saveAll(); updateDisplay();
+showMainUI();
+saveAll();
+updateDisplay();
 }
 
 function showMainUI() {
@@ -178,7 +194,7 @@ document.getElementById("pauseHint").style.display = "block"
 function updateDisplay() {
 document.getElementById("valStart").textContent = state.max;
 document.getElementById("valRest").textContent = state.cur;
-const p = (state.cur / state.max) * 100;
+const p = (state.max > 0) ? (state.cur / state.max) * 100 : 0;
 const box = document.getElementById("boxRest");
 const txt = document.getElementById("statusText");
 box.className = "status"
@@ -217,10 +233,11 @@ return new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
 
 function addCatalogEntry() {
 const n = document.getElementById("loadName").value.trim();
-const v = +document.getElementById("loadVal").value;
+const v = parseInt(document.getElementById("loadVal").value, 10);
 if (!n || isNaN(v)) return;
 loads.push({n, v});
-saveAll(); renderCatalog();
+saveAll();
+renderCatalog();
 document.getElementById("loadName").value = ""
 document.getElementById("loadVal").value = ""
 }
@@ -231,18 +248,18 @@ div.innerHTML = ""
 loads.forEach((l, i) => {
 const item = document.createElement("div");
 item.className = "item"
-item.innerHTML = `<span class="clickable-name" onclick="applyLoad(${i})"><strong>${l.n}</strong> (${l.v})</span><div><button class="small-btn" style="background:var(--blue)" onclick="applyLoad(${i})">+</button><button class="small-btn" style="background:var(--gray)" onclick="editCatalog(${i})">✎</button><button class="small-btn" style="background:var(--red)" onclick="deleteCatalog(${i})">✕</button></div>`;
+item.innerHTML = `<span class="clickable-name" onclick="applyLoad(${i})"><strong>${l.n}</strong> (${l.v})</span><div><button type="button" class="small-btn" style="background:var(--blue)" onclick="applyLoad(${i})">+</button><button type="button" class="small-btn" style="background:var(--gray)" onclick="editCatalog(${i})">✎</button><button type="button" class="small-btn" style="background:var(--red)" onclick="deleteCatalog(${i})">✕</button></div>`;
 div.appendChild(item);
 });
 }
 
 function applyLoad(i) {
-initAudio();
 if (state.max <= 0) return alert("Bitte erst den Tag starten!");
 state.cur = Math.max(0, state.cur - loads[i].v);
 state.block += loads[i].v;
 state.used.push({...loads[i], t: nowTime()});
-saveAll(); updateDisplay();
+saveAll();
+updateDisplay();
 }
 
 function renderUsed() {
@@ -250,7 +267,7 @@ const div = document.getElementById("dayList");
 div.innerHTML = ""
 [...state.used].reverse().forEach(u => {
 const isWarn = u.n.includes("Strafe");
-const isPause = u.v < 0;
+const isPause = (u.v < 0);
 const row = document.createElement("div");
 row.className = "item"
 row.innerHTML = `<span><span class="time-label">${u.t || ''}</span> <span style="${isWarn ? 'color:var(--red);font-weight:bold' : ''}">${u.n}</span></span><span style="color:${isPause ? 'var(--green)' : 'var(--red)'}">${isPause ? '+' : '-'}${Math.abs(u.v)}</span>`;
@@ -259,11 +276,13 @@ div.appendChild(row);
 }
 
 function doPause() {
+if (state.max <= 0) return;
 state.cur = Math.min(state.max, state.cur + 3);
 state.block = 0;
 state.pene = false;
 state.used.push({n:"☕ Pause / Erholung", v:-3, t:nowTime()});
-saveAll(); updateDisplay();
+saveAll();
+updateDisplay();
 }
 
 function undoLast() {
@@ -279,11 +298,12 @@ state.block = 0;
 state.cur = Math.min(state.max, state.cur + last.v);
 state.block = Math.max(0, state.block - last.v);
 }
-saveAll(); updateDisplay();
+saveAll();
+updateDisplay();
 }
 
 function resetDay() {
-if (!confirm("Wirklich archivieren und neu starten?")) return;
+if (!confirm("Tag wirklich zurücksetzen? Heutige Daten werden archiviert.")) return;
 archiveDay();
 resetDayInternal();
 }
@@ -295,12 +315,22 @@ location.reload();
 }
 
 function editCatalog(i) {
-const n = prompt("Name:", loads[i].n), v = prompt("Punkte:", loads[i].v);
-if (n && v && !isNaN(+v)) { loads[i] = {n, v:+v}; saveAll(); renderCatalog(); }
+const n = prompt("Name:", loads[i].n);
+const v = prompt("Punkte:", loads[i].v);
+const parsedV = parseInt(v, 10);
+if (n && !isNaN(parsedV)) {
+loads[i] = {n, v:parsedV};
+saveAll();
+renderCatalog();
+}
 }
 
 function deleteCatalog(i) {
-if (confirm("Eintrag löschen?")) { loads.splice(i, 1); saveAll(); renderCatalog(); }
+if (confirm("Eintrag löschen?")) {
+loads.splice(i, 1);
+saveAll();
+renderCatalog();
+}
 }
 </script>
 </body>
