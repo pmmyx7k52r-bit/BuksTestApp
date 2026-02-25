@@ -3,231 +3,233 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Belastungskonto 3.9.1.3</title>
 <style>
-:root { --green:#34c759; --yellow:#ffcc00; --orange:#ff9500; --red:#ff3b30; --blue:#007aff; --gray:#8e8e93; --pause:#5856d6; }
-body { font-family:-apple-system,system-ui,sans-serif; background:#f2f2f7; margin:0; padding:12px; padding-top:20px; }
-.card { border-radius:16px; padding:16px; margin-bottom:12px; box-shadow:0 4px 12px rgba(0,0,0,.15); background:#fff; color:#000; transition:background-color 0.4s,color 0.4s; }
-#statusWrap { gap:10px; margin-bottom:12px; }
-.sbox { flex:1; border-radius:14px; padding:14px; font-weight:800; text-align:center; box-shadow:0 4px 10px rgba(0,0,0,0.15); background:#34c759; color:#fff; transition:background-color 0.4s; }
-.sbox .big { font-size:2rem; display:block; margin:5px 0; }
-button { width:100%; padding:14px; border:none; border-radius:12px; font-weight:700; font-size:16px; color:#fff; cursor:pointer; margin-top:8px; }
-.small-btn { width:34px; height:34px; padding:0; font-size:14px; border-radius:8px; margin-left:4px; display:inline-flex; align-items:center; justify-content:center; margin-top:0; }
-.item { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid rgba(0,0,0,0.1); }
-input,select { display:block; width:100%; padding:12px; border:1px solid rgba(0,0,0,0.15); border-radius:10px; font-size:16px; margin-top:6px; box-sizing:border-box; background:#fff; color:#000; }
-#pacingHeader { position:fixed; top:0; left:0; width:100%; padding:10px; text-align:center; font-weight:800; z-index:2000; display:none; box-shadow:0 2px 10px rgba(0,0,0,0.2); box-sizing:border-box; }
-.warn-rot { background:var(--red); color:#fff; }
-.warn-pene { background:#000; color:var(--yellow); border-bottom:3px solid var(--red); }
-.blink { animation:blinker 0.9s linear infinite; }
-@keyframes blinker { 50%{opacity:0.3;} }
-#toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#fff; padding:12px 24px; border-radius:20px; font-weight:bold; display:none; z-index:3000; }
+:root{--green:#34c759;--yellow:#ffcc00;--orange:#ff9500;--red:#ff3b30;--blue:#007aff;--gray:#8e8e93;--pause:#5856d6;}
+body{font-family:system-ui,sans-serif;background:#f2f2f7;margin:0;padding:12px;}
+.card{border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 4px 12px rgba(0,0,0,.15);background:#fff;color:#000;transition:background 0.4s,color 0.4s;}
+button{display:block;width:100%;padding:14px;border:none;border-radius:12px;font-weight:700;font-size:16px;color:#fff;cursor:pointer;margin-top:8px;}
+.small-btn{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;font-size:14px;border-radius:8px;margin-left:4px;margin-top:0;}
+.item{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(0,0,0,0.1);}
+input,select{display:block;width:100%;padding:12px;border:1px solid #ccc;border-radius:10px;font-size:16px;margin-top:6px;box-sizing:border-box;background:#fff;color:#000;}
+#sWrap{display:none;gap:10px;margin-bottom:12px;}
+.sbox{flex:1;border-radius:14px;padding:14px;font-weight:800;text-align:center;color:#fff;transition:background 0.4s;}
+.big{font-size:2rem;display:block;margin:5px 0;}
+#hdr{position:fixed;top:0;left:0;width:100%;padding:10px;text-align:center;font-weight:800;z-index:999;display:none;box-sizing:border-box;}
+.wrot{background:var(--red);color:#fff;}
+.wpene{background:#000;color:var(--yellow);border-bottom:3px solid var(--red);}
+.blink{animation:bl 0.9s linear infinite;}
+@keyframes bl{50%{opacity:0.3;}}
+#toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:12px 24px;border-radius:20px;font-weight:bold;display:none;z-index:9999;}
 </style>
 </head>
 <body>
-<div id="pacingHeader"></div>
+<div id="hdr"></div>
 <div id="toast">OK</div>
-
-<div id="statusWrap" style="display:none;flex-direction:row;">
-<div class="sbox" id="boxLimit">Limit<span class="big" id="valStart">0</span></div>
-<div class="sbox" id="boxRest">Rest<span class="big" id="valRest">0</span></div>
+<div id="sWrap" style="display:none;flex-direction:row;">
+<div class="sbox" id="bLimit" style="background:#34c759">Limit<span class="big" id="vStart">0</span></div>
+<div class="sbox" id="bRest" style="background:#34c759">Rest<span class="big" id="vRest">0</span></div>
 </div>
-
-<button id="pauseBtn" style="display:none;background:#5856d6" onclick="doPause()">☕ PAUSE (+3 & Block-Reset)</button>
-
-<div id="pauseHint" style="display:none;font-size:12px;padding:8px;border-radius:8px;margin-bottom:12px;border-left:4px solid #5856d6;background:rgba(88,86,214,0.1);color:#333">
-<strong>Hinweis:</strong> Ruhe zur Puls-Normalisierung ist KEINE Pause!
+<button id="pauseBtn" style="display:none;background:#5856d6;margin-bottom:4px" onclick="doPause()">Pause (+3 &amp; Block-Reset)</button>
+<div id="pauseHint" style="display:none;font-size:12px;padding:8px;border-radius:8px;margin-bottom:12px;border-left:4px solid #5856d6;background:rgba(88,86,214,0.1);">
+Hinweis: Ruhe zur Puls-Normalisierung ist KEINE Pause!
 </div>
-
-<div class="card" id="cardCheck">
-<h3 id="checkTitle" style="margin:0 0 12px 0">Morgen-Check</h3>
-<div id="checkInputs">
+<div class="card" id="cCheck">
+<h3 id="cTitle">Morgen-Check</h3>
+<div id="cInputs">
 <input id="sleep" type="number" placeholder="Schlafindex (z.B. 65)">
 <select id="feeling">
-<option value="" disabled selected>Wie f&uuml;hlst du dich?</option>
+<option value="">Bitte auswaehlen...</option>
 <option value="12">Es geht mir gut (+12)</option>
 <option value="4">Leichter Druck, es geht aber (+4)</option>
-<option value="-6">Starker Druck/Nebel, es geht irgendwie (-6)</option>
-<option value="-12">Schwerer Druck, Pfeifen, es geht nichts (-12)</option>
+<option value="-6">Starker Druck/Nebel (-6)</option>
+<option value="-12">Schwerer Druck, es geht nichts (-12)</option>
 </select>
-<button style="background:#007aff;margin-top:12px" onclick="startDay()">Tag starten</button>
+<button style="background:#007aff" onclick="startDay()">Tag starten</button>
 </div>
-<button id="btnReset" style="display:none;background:#8e8e93;font-size:13px" onclick="resetDay()">&#8617; Neuer Tag (Reset)</button>
+<button id="btnReset" style="display:none;background:#8e8e93;font-size:13px" onclick="resetDay()">Neuer Tag (Reset)</button>
 </div>
-
-<div class="card" id="cardCatalog">
-<h3 style="margin:0 0 12px 0">Belastungskatalog</h3>
+<div class="card" id="cCat">
+<h3>Belastungskatalog</h3>
 <div style="display:flex;gap:6px;align-items:flex-end;">
-<input id="loadName" style="flex:2;margin-top:0" placeholder="Aktivit&auml;t">
-<input id="loadVal" style="flex:0.8;margin-top:0" type="number" placeholder="Pkt.">
-<button style="background:#007aff;width:auto;padding:10px 14px;margin-top:0;white-space:nowrap;flex:0.5" onclick="addCatalogEntry()">&#128190; Neu</button>
+<input id="lName" style="flex:2;margin-top:0" placeholder="Aktivitaet">
+<input id="lVal" style="flex:0.8;margin-top:0" type="number" placeholder="Pkt.">
+<button style="background:#007aff;width:auto;padding:10px 14px;margin-top:0;white-space:nowrap;flex:0.5" onclick="addEntry()">+ Neu</button>
 </div>
 <div id="catalog" style="margin-top:15px"></div>
 </div>
-
-<div class="card" id="cardUsed">
-<h3 style="margin:0 0 12px 0">Heutige Aktivit&auml;ten</h3>
+<div class="card" id="cUsed">
+<h3>Heutige Aktivitaeten</h3>
 <div id="dayList"></div>
-<button style="background:#ff9500;margin-top:15px" onclick="undoLast()">Letzten Eintrag r&uuml;ckg&auml;ngig</button>
+<button style="background:#ff9500;margin-top:15px" onclick="undoLast()">Letzten Eintrag rueckgaengig</button>
 </div>
-
 <script>
-var SL="pacing_catalog_data_v2", SS="pacing_daily_state_v2"
-// Alte Keys loeschen falls vorhanden
-["pacing_catalog_data","pacing_daily_state","pacing_catalog_data_v1","pacing_daily_state_v1"].forEach(function(k){localStorage.removeItem(k);});
+var SL="pac_loads", SS="pac_state"
 var DL=[
 {n:"Puls > 88",v:1},{n:"3-Minuten-Arbeiten",v:2},{n:"Aufstehen",v:3},
-{n:"Leichte Arbeiten (Fr\u00fchst\u00fcck/Bett)",v:2},{n:"30 Min. achtsame Bewegung",v:5},
-{n:"L\u00e4ngere leichte Arbeiten",v:10},{n:"\u00c4rgern",v:10},
-{n:"Problem w\u00e4lzen",v:10},{n:"L\u00e4ngere starke Konzentration",v:10}
+{n:"Leichte Arbeiten",v:2},{n:"30 Min. Bewegung",v:5},
+{n:"Laengere leichte Arbeiten",v:10},{n:"Aergern",v:10},
+{n:"Problem waelzen",v:10},{n:"Laengere Konzentration",v:10}
 ];
-var loads=JSON.parse(localStorage.getItem(SL)||"null")||DL;
-var state=JSON.parse(localStorage.getItem(SS)||"null")||{max:0,cur:0,block:0,used:[],date:"",pene:false};
+var loads, state;
+try { loads = JSON.parse(localStorage.getItem(SL)) || DL; } catch(e) { loads = DL; }
+try { state = JSON.parse(localStorage.getItem(SS)) || {max:0,cur:0,block:0,used:[],date:"",pene:false}; } catch(e) { state = {max:0,cur:0,block:0,used:[],date:"",pene:false}; }
 
-window.onload=function(){
-var today=new Date().toDateString();
-if(state.date&&state.date!==today&&state.max>0){
-if(confirm("Guten Morgen! Neuen Tag beginnen?")){resetDayInternal();return;}
+window.onload = function() {
+var today = new Date().toDateString();
+if (state.date && state.date !== today && state.max > 0) {
+if (confirm(“Neuen Tag beginnen?”)) { resetDayInternal(); return; }
 }
-if(state.max>0){showMainUI();updateDisplay();}
+if (state.max > 0) { showUI(); updateDisplay(); }
 renderCatalog();
 };
 
-function save(){localStorage.setItem(SL,JSON.stringify(loads));localStorage.setItem(SS,JSON.stringify(state));}
-
-function toast(msg){var t=document.getElementById("toast");t.textContent=msg||"Erfasst \ud83d\udc4d"t.style.display="block"setTimeout(function(){t.style.display="none"},1500);}
-
-function startDay(){
-var s=document.getElementById("sleep").value;
-var f=document.getElementById("feeling").value;
-if(!s||Number(s)<=0){alert("Bitte Schlafindex eingeben.");return;} if(!f){alert("Bitte Gef\u00fchl ausw\u00e4hlen.");return;}
-state.max=parseInt(s)+parseInt(f);
-state.cur=state.max;
-state.used=[];state.block=0;state.pene=false;
-state.date=new Date().toDateString();
-showMainUI();save();updateDisplay();
+function save() {
+try { localStorage.setItem(SL, JSON.stringify(loads)); } catch(e) {}
+try { localStorage.setItem(SS, JSON.stringify(state)); } catch(e) {}
 }
 
-function showMainUI(){
-document.getElementById("statusWrap").style.display="flex"
-document.getElementById("pauseBtn").style.display="block"
-document.getElementById("pauseHint").style.display="block"
-document.getElementById("checkInputs").style.display="none"
-document.getElementById("checkTitle").style.display="none"
-document.getElementById("btnReset").style.display="block"
+function toast(msg) {
+var t = document.getElementById(“toast”);
+t.textContent = msg || “Erfasst”;
+t.style.display = “block”;
+setTimeout(function(){ t.style.display = “none”; }, 1500);
 }
 
-function color(p){
-if(p>75)return{bg:"#34c759",fg:"#fff"};
-if(p>50)return{bg:"#ffcc00",fg:"#000"};
-if(p>25)return{bg:"#ff9500",fg:"#fff"};
-return{bg:"#ff3b30",fg:"#fff"};
+function startDay() {
+var s = document.getElementById(“sleep”).value;
+var f = document.getElementById(“feeling”).value;
+if (!s || Number(s) <= 0) { alert(“Schlafindex eingeben!”); return; }
+if (!f) { alert(“Gefuehl auswaehlen!”); return; }
+state.max = parseInt(s) + parseInt(f);
+state.cur = state.max;
+state.used = []; state.block = 0; state.pene = false;
+state.date = new Date().toDateString();
+showUI(); save(); updateDisplay();
 }
 
-function updateDisplay(){
-document.getElementById("valStart").textContent=state.max;
-document.getElementById("valRest").textContent=state.cur;
-var p=state.max>0?(state.cur/state.max)*100:100;
-var c=color(p);
-var cards=document.querySelectorAll(".card");
-for(var i=0;i<cards.length;i++){cards[i].style.background=c.bg;cards[i].style.color=c.fg;}
-document.getElementById("boxLimit").style.background=c.bg;
-document.getElementById("boxLimit").style.color=c.fg;
-document.getElementById("boxRest").style.background=c.bg;
-document.getElementById("boxRest").style.color=c.fg;
-var h=document.getElementById("pacingHeader");
-if(state.block>=30){
-h.style.display="block"h.className="warn-pene"
-h.innerHTML="<span class='blink'>&#9889; PAUSE ERZWINGEN! &#9889;</span><br><small>Block: "+state.block+"</small>"
-if(!state.pene){state.cur=Math.max(0,state.cur-1);state.used.push({n:"STRAFE",v:1,t:now()});state.pene=true;save();updateDisplay();}
-}else if(state.block>=20){
-h.style.display="block"h.className="warn-rot"h.innerHTML="PAUSE EMPFOHLEN! (Block: "+state.block+")"
-}else{h.style.display="none"}
+function showUI() {
+document.getElementById(“sWrap”).style.display = “flex”;
+document.getElementById(“pauseBtn”).style.display = “block”;
+document.getElementById(“pauseHint”).style.display = “block”;
+document.getElementById(“cInputs”).style.display = “none”;
+document.getElementById(“cTitle”).style.display = “none”;
+document.getElementById(“btnReset”).style.display = “block”;
+}
+
+function applyColors(bg, fg) {
+var cards = document.querySelectorAll(”.card”);
+for (var i = 0; i < cards.length; i++) { cards[i].style.background = bg; cards[i].style.color = fg; }
+document.getElementById(“bLimit”).style.background = bg;
+document.getElementById(“bLimit”).style.color = fg;
+document.getElementById(“bRest”).style.background = bg;
+document.getElementById(“bRest”).style.color = fg;
+}
+
+function updateDisplay() {
+document.getElementById(“vStart”).textContent = state.max;
+document.getElementById(“vRest”).textContent = state.cur;
+var p = state.max > 0 ? (state.cur / state.max) * 100 : 100;
+if (p > 75) applyColors(”#34c759”,”#fff”);
+else if (p > 50) applyColors(”#ffcc00”,”#000”);
+else if (p > 25) applyColors(”#ff9500”,”#fff”);
+else applyColors(”#ff3b30”,”#fff”);
+var h = document.getElementById(“hdr”);
+if (state.block >= 30) {
+h.style.display=“block”; h.className=“wpene”;
+h.innerHTML = “<span class='blink'>PAUSE ERZWINGEN!</span> Block: “+state.block;
+if (!state.pene) { state.cur=Math.max(0,state.cur-1); state.used.push({n:“STRAFE”,v:1,t:now()}); state.pene=true; save(); updateDisplay(); }
+} else if (state.block >= 20) {
+h.style.display=“block”; h.className=“wrot”; h.textContent=“PAUSE EMPFOHLEN! Block: “+state.block;
+} else { h.style.display=“none”; }
 renderUsed();
 }
 
-function now(){return new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});}
+function now() { return new Date().toLocaleTimeString([],{hour:“2-digit”,minute:“2-digit”}); }
 
-function addCatalogEntry(){
-var n=document.getElementById("loadName").value.trim();
-var v=parseInt(document.getElementById("loadVal").value);
-if(!n||isNaN(v))return;
-loads.push({n:n,v:v});save();renderCatalog();
-document.getElementById("loadName").value=""
-document.getElementById("loadVal").value=""
-toast("Gespeichert");
+function addEntry() {
+var n = document.getElementById(“lName”).value.trim();
+var v = parseInt(document.getElementById(“lVal”).value);
+if (!n || isNaN(v)) return;
+loads.push({n:n,v:v}); save(); renderCatalog();
+document.getElementById(“lName”).value = “”;
+document.getElementById(“lVal”).value = “”;
+toast(“Gespeichert”);
 }
 
-function renderCatalog(){
-var d=document.getElementById("catalog"),h=""
-for(var i=0;i<loads.length;i++){
-h+='<div class="item"><span style="flex-grow:1;cursor:pointer;padding:8px 0" onclick="applyLoad('+i+')"><strong>'+loads[i].n+'</strong> ('+loads[i].v+')</span>'
-+'<div style="display:flex">'
-+'<button class="small-btn" style="background:#007aff;color:#fff" onclick="applyLoad('+i+')">+</button>'
-+'<button class="small-btn" style="background:#8e8e93;color:#fff" onclick="editCatalog('+i+')">✎</button>'
-+'<button class="small-btn" style="background:#ff3b30;color:#fff" onclick="deleteCatalog('+i+')">x</button>'
-+'<button class="small-btn" style="background:rgba(0,0,0,0.25);color:#fff" onclick="moveItem('+i+',-1)">↑</button>'
-+'<button class="small-btn" style="background:rgba(0,0,0,0.25);color:#fff" onclick="moveItem('+i+',1)">↓</button>'
-+'</div></div>';
+function renderCatalog() {
+var d = document.getElementById(“catalog”), h = “”;
+for (var i = 0; i < loads.length; i++) {
+h += “<div class='item'>”;
+h += “<span style='flex-grow:1;cursor:pointer;padding:8px 0' onclick='applyLoad("+i+")'>”+loads[i].n+” (”+loads[i].v+”)</span>”;
+h += “<div style='display:flex'>”;
+h += “<button class='small-btn' style='background:#007aff;color:#fff' onclick='applyLoad("+i+")'>+</button>”;
+h += “<button class='small-btn' style='background:#8e8e93;color:#fff' onclick='editEntry("+i+")'>E</button>”;
+h += “<button class='small-btn' style='background:#ff3b30;color:#fff' onclick='delEntry("+i+")'>X</button>”;
+h += “<button class='small-btn' style='background:rgba(0,0,0,0.3);color:#fff' onclick='moveItem("+i+",-1)'>^</button>”;
+h += “<button class='small-btn' style='background:rgba(0,0,0,0.3);color:#fff' onclick='moveItem("+i+",1)'>v</button>”;
+h += “</div></div>”;
 }
-d.innerHTML=h;
-}
-
-function moveItem(i,d){var j=i+d;if(j>=0&&j<loads.length){var t=loads[i];loads[i]=loads[j];loads[j]=t;save();renderCatalog();}}
-
-function applyLoad(i){
-if(state.max<=0){alert("Bitte erst den Tag starten!");return;}
-state.cur=Math.max(0,state.cur-loads[i].v);
-state.block+=loads[i].v;
-state.used.push({n:loads[i].n,v:loads[i].v,t:now()});
-save();updateDisplay();toast();
+d.innerHTML = h;
 }
 
-function renderUsed(){
-var d=document.getElementById("dayList"),h=""
-var a=state.used.slice().reverse();
-for(var i=0;i<a.length;i++){
-var u=a[i],neg=u.v<0;
-h+='<div class="item"><span><span style="font-size:11px;opacity:0.7;margin-right:8px">'+(u.t||"")+'</span>'+u.n+'</span><span>'+(neg?"+":"-")+Math.abs(u.v)+'</span></div>';
-}
-d.innerHTML=h;
-}
+function moveItem(i,d) { var j=i+d; if(j>=0&&j<loads.length){var t=loads[i];loads[i]=loads[j];loads[j]=t;save();renderCatalog();} }
 
-function doPause(){
-state.cur+=3;state.block=0;state.pene=false;
-state.used.push({n:"Pause",v:-3,t:now()});
-save();updateDisplay();toast("Pause verbucht");
+function applyLoad(i) {
+if (state.max<=0) { alert(“Bitte erst Tag starten!”); return; }
+state.cur = Math.max(0, state.cur - loads[i].v);
+state.block += loads[i].v;
+state.used.push({n:loads[i].n, v:loads[i].v, t:now()});
+save(); updateDisplay(); toast();
 }
 
-function undoLast(){
-if(!state.used.length)return;
-var last=state.used.pop();
-if(last.n.indexOf("STRAFE")!==-1){state.cur+=1;state.pene=false;state.block=29;}
-else{state.cur+=last.v;if(last.v>0)state.block=Math.max(0,state.block-last.v);}
-save();updateDisplay();
+function renderUsed() {
+var d = document.getElementById(“dayList”), h = “”;
+var a = state.used.slice().reverse();
+for (var i = 0; i < a.length; i++) {
+var u = a[i];
+h += “<div class='item'><span><small style='opacity:0.7;margin-right:8px'>”+(u.t||””)+”</small>”+u.n+”</span>”;
+h += “<span>”+(u.v<0?”+”:”-”)+Math.abs(u.v)+”</span></div>”;
+}
+d.innerHTML = h;
 }
 
-function resetDay(){if(!confirm("Tag wirklich zur\u00fccksetzen?"))return;resetDayInternal();}
-
-function resetDayInternal(){
-state={max:0,cur:0,block:0,used:[],date:"",pene:false};
-localStorage.setItem(SS,JSON.stringify(state));
-var cards=document.querySelectorAll(".card");
-for(var i=0;i<cards.length;i++){cards[i].style.background=""cards[i].style.color=""}
-document.getElementById("sleep").value=""
-document.getElementById("feeling").selectedIndex=0;
-document.getElementById("checkInputs").style.display="block"
-document.getElementById("checkTitle").style.display="block"
-document.getElementById("btnReset").style.display="none"
-document.getElementById("statusWrap").style.display="none"
-document.getElementById("pauseBtn").style.display="none"
-document.getElementById("pauseHint").style.display="none"
-document.getElementById("pacingHeader").style.display="none"
-document.getElementById("dayList").innerHTML=""
+function doPause() {
+state.cur+=3; state.block=0; state.pene=false;
+state.used.push({n:“Pause”,v:-3,t:now()});
+save(); updateDisplay(); toast(“Pause verbucht”);
 }
 
-function editCatalog(i){var n=prompt("Name:",loads[i].n),v=prompt("Punkte:",loads[i].v);if(n&&v){loads[i]={n:n,v:parseInt(v)};save();renderCatalog();}}
-function deleteCatalog(i){if(confirm("L\u00f6schen?")){loads.splice(i,1);save();renderCatalog();}}
+function undoLast() {
+if (!state.used.length) return;
+var last = state.used.pop();
+if (last.n === “STRAFE”) { state.cur+=1; state.pene=false; state.block=29; }
+else { state.cur+=last.v; if(last.v>0) state.block=Math.max(0,state.block-last.v); }
+save(); updateDisplay();
+}
+
+function resetDay() { if(!confirm(“Wirklich?”)) return; resetDayInternal(); }
+
+function resetDayInternal() {
+state = {max:0,cur:0,block:0,used:[],date:””,pene:false};
+save();
+var cards = document.querySelectorAll(”.card”);
+for (var i=0;i<cards.length;i++) { cards[i].style.background=””; cards[i].style.color=””; }
+document.getElementById(“sleep”).value=””;
+document.getElementById(“feeling”).selectedIndex=0;
+document.getElementById(“cInputs”).style.display=“block”;
+document.getElementById(“cTitle”).style.display=“block”;
+document.getElementById(“btnReset”).style.display=“none”;
+document.getElementById(“sWrap”).style.display=“none”;
+document.getElementById(“pauseBtn”).style.display=“none”;
+document.getElementById(“pauseHint”).style.display=“none”;
+document.getElementById(“hdr”).style.display=“none”;
+document.getElementById(“dayList”).innerHTML=””;
+}
+
+function editEntry(i) { var n=prompt(“Name:”,loads[i].n); var v=prompt(“Punkte:”,loads[i].v); if(n&&v){loads[i]={n:n,v:parseInt(v)};save();renderCatalog();} }
+function delEntry(i) { if(confirm(“Loeschen?”)){loads.splice(i,1);save();renderCatalog();} }
 </script>
 
 </body>
