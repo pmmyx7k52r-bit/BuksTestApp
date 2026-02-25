@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Belastungskonto 3.9.1.3</title>
+<title>Belastungskonto 3.9.1.4</title>
 <style>
 :root{
 --green:#34c759; --yellow:#ffcc00; --orange:#ff9500; --red:#ff3b30;
@@ -101,11 +101,14 @@ font-weight:bold; display:none; z-index:3000; pointer-events:none;
 <button onclick="undoLast()" style="background:var(--orange); width:100%; padding:14px; border:none; border-radius:12px; font-weight:700; color:#fff; margin-top:15px">Letzten Eintrag rückgängig</button>
 </div>
 
+<div style="margin-top: 20px; text-align: center;">
+<button id="showCheckBtn" style="background:none; color:var(--gray); font-size:12px; text-decoration:underline; display:none;" onclick="toggleCheck()">Morgen-Check bearbeiten</button>
+</div>
+
 <script>
 const STORAGE_LOADS = "pacing_catalog_data"
 const STORAGE_STATE = "pacing_daily_state"
 
-// DEINE BELASTUNGEN AUS DEM BILD
 const myLoads = [
 {n: "Puls > 88", v: 1},
 {n: "3-Minuten-Arbeiten", v: 2},
@@ -164,6 +167,13 @@ function showMainUI() {
 document.getElementById("statusWrap").style.display = "flex"
 document.getElementById("pauseBtn").style.display = "block"
 document.getElementById("pauseHint").style.display = "block"
+document.getElementById("cardCheck").style.display = "none" // Ausblenden
+document.getElementById("showCheckBtn").style.display = "inline-block" // Button unten zeigen
+}
+
+function toggleCheck() {
+const card = document.getElementById("cardCheck");
+card.style.display = card.style.display === "none" ? "block" : "none"
 }
 
 function updateDisplay() {
@@ -295,10 +305,8 @@ resetDayInternal();
 }
 
 function resetDayInternal() {
-// Tagesstatus leeren
 state = { max: 0, cur: 0, block: 0, used: [], date: "", pene: false };
 localStorage.setItem(STORAGE_STATE, JSON.stringify(state));
-// UI-Elemente explizit leeren
 document.getElementById("sleep").value = ""
 document.getElementById("feeling").selectedIndex = 0;
 location.reload();
