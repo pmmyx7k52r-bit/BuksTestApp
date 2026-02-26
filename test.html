@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PacingApp4.0.2</title>
+<title>PacingApp4.0.4</title>
 
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -125,12 +125,12 @@ Eigener Wert<span class="schlaf-val">z.B. Schlaftracker</span>
 <option value="-12">Schwerer Druck, Pfeifen, es geht nichts (-12)</option>
 </select>
 <button class="btn-start" onclick="startDay()">Tag starten</button>
-<button class="btn-reset" onclick="resetDay()">Neuer Tag (Reset)</button>
+<button class="btn-reset" onclick="resetDay()">Neuer Tag! (Reset!)</button>
 
 </div>
 
 <div class="card" id="cardCatalog" style="display:none;">
-<h3>Belastungskatalog</h3>
+<h3>Belastungskatalog <button type="button" onclick="resetKatalog()" style="background:none;border:none;color:#8e8e93;font-size:11px;font-weight:400;text-decoration:underline;width:auto;padding:0;cursor:pointer;">Standard wiederherstellen</button></h3>
 <div style="display:flex;gap:6px;align-items:flex-end;">
 <input id="loadName" style="flex:2;margin-top:0;" placeholder="Aktivität">
 <input id="loadVal" style="flex:0.8;margin-top:0;" type="number" placeholder="Pkt.">
@@ -146,7 +146,7 @@ Eigener Wert<span class="schlaf-val">z.B. Schlaftracker</span>
 </div>
 
 <div style="margin-top:20px;text-align:center;">
-<button id="showCheckBtn" style="background:none;border:none;color:var(--gray);font-size:12px;text-decoration:underline;display:none;width:auto;padding:8px;" onclick="toggleCheck()">Morgen-Check bearbeiten</button>
+<button id="showCheckBtn" style="background:none;border:none;color:var(--gray);font-size:12px;text-decoration:underline;display:none;width:auto;padding:8px;" onclick="toggleCheck()">Zum Tages-Reset</button>
 </div>
 
 <script>
@@ -164,6 +164,13 @@ var myLoads = [
 {n:"Problem wälzen",v:10},
 {n:"Längere starke Konzentration",v:10}
 ];
+
+function resetKatalog() {
+loads = JSON.parse(JSON.stringify(myLoads));
+storeSet(STORAGE_LOADS, JSON.stringify(loads));
+renderCatalog();
+showToast("Katalog zurückgesetzt 🔄");
+}
 
 function storeGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function storeSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
@@ -257,11 +264,7 @@ document.getElementById("cardUsed").style.display = "block"
 }
 
 function toggleCheck() {
-var card = document.getElementById("cardCheck");
-var open = card.style.display === "none"
-card.style.display = open ? "block" : "none"
-document.getElementById("cardCatalog").style.display = open ? "none" : "block"
-document.getElementById("cardUsed").style.display = open ? "none" : "block"
+resetDayInternal();
 }
 
 function updateDisplay() {
