@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Belastungskonto 4.0.4.1</title>
+<title>PacingApp4.1.0</title>
 
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -67,6 +67,8 @@ line-height:1.2;
 .individuell-row { display:none; margin-top:6px; }
 .individuell-row.open { display:block; }
 
+.rolling-warn{background:#ffedea;border:2px solid #ff3b30;color:#ff3b30;padding:10px 12px;border-radius:12px;font-weight:bold;margin-bottom:10px;display:none;text-align:center;font-size:13px;}
+
 #toast{
 position:fixed; bottom:30px; left:50%; transform:translateX(-50%);
 background:rgba(0,0,0,0.8); color:#fff; padding:12px 24px; border-radius:20px;
@@ -93,6 +95,8 @@ Rest<span id="valRest" class="big">0</span>
 <div id="pauseHint" class="pause-hint">
 <strong>Hinweis:</strong> Ruhe zur Puls-Normalisierung ist KEINE Pause!
 </div>
+
+<div id="rollingWarnBox" class="rolling-warn">⚠️ Mehrere Tage im roten Bereich!<br>Auf Rolling PENE aufpassen!</div>
 
 <div class="card" id="cardCheck">
 <h3>Morgen-Check</h3>
@@ -153,6 +157,7 @@ Eigener Wert<span class="schlaf-val">z.B. Schlaftracker</span>
 <script>
 var STORAGE_LOADS = "pacing_catalog_data"
 var STORAGE_STATE = "pacing_daily_state"
+var STORAGE_HISTORY = "pacing_red_history"
 
 var myLoads = [
 {n:"Puls > 88",v:1},
@@ -178,13 +183,17 @@ function storeSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 
 var loads = JSON.parse(storeGet(STORAGE_LOADS)) || myLoads;
 var state = JSON.parse(storeGet(STORAGE_STATE)) || {max:0,cur:0,block:0,used:[],date:"",pene:false};
+var history = JSON.parse(storeGet(STORAGE_HISTORY)) || [];
 
 var schlafWert = null;
 
 window.onload = function() {
+checkRollingPene();
 var today = new Date().toDateString();
 if(state.date && state.date !== today && state.max > 0) {
+archiveDay();
 resetDayInternal();
+return;
 }
 if(state.max > 0) { showMainUI(); updateDisplay(); }
 renderCatalog();
@@ -193,6 +202,22 @@ renderCatalog();
 function saveAll() {
 storeSet(STORAGE_LOADS, JSON.stringify(loads));
 storeSet(STORAGE_STATE, JSON.stringify(state));
+}
+
+function archiveDay() {
+var pct = state.max > 0 ? (state.cur / state.max) * 100 : 100;
+history.push(pct <= 25);
+if(history.length > 7) history.shift();
+storeSet(STORAGE_HISTORY, JSON.stringify(history));
+}
+
+function checkRollingPene() {
+var red = 0;
+for(var i=0; i<history.length; i++){ if(history[i]) red++; }
+var pctHeute = state.max > 0 ? (state.cur / state.max) * 100 : 100;
+if(state.max > 0 && pctHeute <= 25) red++;
+var last2ok = history.length >= 2 && !history[history.length-1] && !history[history.length-2];
+document.getElementById("rollingWarnBox").style.display = (red >= 3 && !last2ok) ? "block" : "none"
 }
 
 function showToast(msg) {
@@ -250,6 +275,7 @@ document.getElementById("cardUsed").style.display = "block"
 }
 
 function toggleCheck() {
+archiveDay();
 resetDayInternal();
 }
 
@@ -298,6 +324,7 @@ header.style.display = "none"
 state.pene = false;
 }
 renderUsed();
+checkRollingPene();
 }
 
 function nowTime() { return new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}); }
@@ -400,6 +427,7 @@ saveAll(); updateDisplay();
 }
 
 function resetDay() {
+archiveDay();
 resetDayInternal();
 }
 
