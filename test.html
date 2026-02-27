@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-
 <html lang="de">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PacingApp4.1.0</title>
+<title>PacingApp4.0.6.1</title>
 
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -150,14 +148,17 @@ Eigener Wert<span class="schlaf-val">z.B. Schlaftracker</span>
 <button onclick="undoLast()" style="background:var(--orange);width:100%;padding:14px;border:none;border-radius:12px;font-weight:700;color:#fff;margin-top:15px">Letzten Eintrag rückgängig</button>
 </div>
 
+<div style="margin-top:10px;text-align:center;">
+<button id="debugBtn" style="background:none;border:1px solid #ccc;color:#999;font-size:11px;display:none;width:auto;padding:6px 12px;border-radius:8px;touch-action:manipulation;" onclick="showHistory()">History anzeigen</button>
+</div>
+
 <div style="margin-top:20px;text-align:center;">
-<button id="showCheckBtn" style="background:none;border:none;color:var(--gray);font-size:12px;text-decoration:underline;display:none;width:auto;padding:8px;" onclick="toggleCheck()">Zum Tages-Reset</button>
+<button id="showCheckBtn" style="background:#8e8e93;color:#fff;font-size:14px;font-weight:700;display:none;width:auto;padding:12px 24px;border:none;border-radius:12px;touch-action:manipulation;" onclick="toggleCheck()">Neuer Tag / Reset</button>
 </div>
 
 <script>
 var STORAGE_LOADS = "pacing_catalog_data"
 var STORAGE_STATE = "pacing_daily_state"
-var STORAGE_HISTORY = "pacing_red_history"
 
 var myLoads = [
 {n:"Puls > 88",v:1},
@@ -182,8 +183,8 @@ function storeGet(k){ try{ return localStorage.getItem(k); }catch(e){ return nul
 function storeSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 
 var loads = JSON.parse(storeGet(STORAGE_LOADS)) || myLoads;
-var state = JSON.parse(storeGet(STORAGE_STATE)) || {max:0,cur:0,block:0,used:[],date:"",pene:false};
-var history = JSON.parse(storeGet(STORAGE_HISTORY)) || [];
+var state = JSON.parse(storeGet(STORAGE_STATE)) || {max:0,cur:0,block:0,used:[],date:"",pene:false,history:[]};
+// history wird im state gespeichert
 
 var schlafWert = null;
 
@@ -205,19 +206,28 @@ storeSet(STORAGE_STATE, JSON.stringify(state));
 }
 
 function archiveDay() {
-var pct = state.max > 0 ? (state.cur / state.max) * 100 : 100;
-history.push(pct <= 25);
-if(history.length > 7) history.shift();
-storeSet(STORAGE_HISTORY, JSON.stringify(history));
+if(state.max <= 0) return;
+if(!state.history) state.history = [];
+var pct = (state.cur / state.max) * 100;
+state.history.push(pct <= 25);
+if(state.history.length > 7) state.history.shift();
+saveAll();
 }
 
 function checkRollingPene() {
+var h = state.history || [];
 var red = 0;
-for(var i=0; i<history.length; i++){ if(history[i]) red++; }
+for(var i=0; i<h.length; i++){ if(h[i]) red++; }
 var pctHeute = state.max > 0 ? (state.cur / state.max) * 100 : 100;
 if(state.max > 0 && pctHeute <= 25) red++;
-var last2ok = history.length >= 2 && !history[history.length-1] && !history[history.length-2];
-document.getElementById("rollingWarnBox").style.display = (red >= 3 && !last2ok) ? "block" : "none"
+var last2ok = h.length >= 2 && !h[h.length-1] && !h[h.length-2];
+var box = document.getElementById("rollingWarnBox");
+if(red >= 3 && !last2ok) {
+box.style.display = "block"
+box.innerHTML = "⚠️ Mehrere Tage im roten Bereich!<br>Auf Rolling PENE aufpassen!"
+} else {
+box.style.display = "none"
+}
 }
 
 function showToast(msg) {
@@ -270,12 +280,13 @@ document.getElementById("pauseBtn").style.display = "block"
 document.getElementById("pauseHint").style.display = "block"
 document.getElementById("cardCheck").style.display = "none"
 document.getElementById("showCheckBtn").style.display = "inline-block"
+document.getElementById("debugBtn").style.display = "inline-block"
 document.getElementById("cardCatalog").style.display = "block"
 document.getElementById("cardUsed").style.display = "block"
 }
 
 function toggleCheck() {
-archiveDay();
+try { archiveDay(); } catch(e) {}
 resetDayInternal();
 }
 
@@ -432,7 +443,9 @@ resetDayInternal();
 }
 
 function resetDayInternal() {
-state = {max:0,cur:0,block:0,used:[],date:"",pene:false};
+try { saveAll(); } catch(e) {}
+var savedHistory = state.history || [];
+state = {max:0,cur:0,block:0,used:[],date:"",pene:false,history:savedHistory};
 saveAll();
 schlafWert = null;
 var btns = document.querySelectorAll(".schlaf-btn");
@@ -451,6 +464,14 @@ document.getElementById("cardUsed").style.display = "none"
 document.getElementById("dayList").innerHTML = ""
 document.getElementById("mainBody").className = ""
 showToast("Neuer Tag gestartet! ☀️");
+}
+
+function showHistory() {
+var h = state.history || [];
+var txt = h.length + " Tage: "
+for(var i=0; i<h.length; i++) txt += (h[i]?"R":"o") + (i<h.length-1?",":"");
+if(h.length===0) txt = "History leer"
+showToast(txt);
 }
 
 function editCatalog(i) {
