@@ -4,6 +4,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Ich mach' das!</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -813,7 +816,7 @@ if (!(t in log2)) { log2[t] = false; save(K.log2, log2); }
 renderAll();
 }
 
-function renderAll() { renderHabit(1); renderHabit(2); renderWeight(); setTimeout(drawChart, 50); }
+function renderAll() { renderHabit(1); renderHabit(2); renderWeight(); requestAnimationFrame(() => requestAnimationFrame(drawChart)); }
 
 function renderHabit(n) {
 const log = load(n === 1 ? K.log1 : K.log2) || {};
@@ -856,8 +859,6 @@ document.getElementById('w-goal').textContent = gw ? gw.toFixed(1) : '—';
 if (wLog.length > 0) {
 const cur = wLog[wLog.length - 1].val;
 document.getElementById('w-current').textContent = cur.toFixed(1);
-const diff = (sw || 0) - cur;
-document.getElementById('w-diff').textContent = (diff >= 0 ? '-' : '+') + Math.abs(diff).toFixed(1);
 
 if (sw && gw && sw !== gw) {
 const pct = Math.min(100, Math.max(0, ((sw - cur) / (sw - gw)) * 100));
@@ -1169,6 +1170,19 @@ canvas.addEventListener('touchend', () => { setTimeout(() => { tooltip.style.dis
 
 // Redraw chart on resize
 window.addEventListener('resize', drawChart);
+
+// Use ResizeObserver to draw chart as soon as canvas has real dimensions
+const chartCanvas = document.getElementById('w-chart');
+if (chartCanvas && window.ResizeObserver) {
+const ro = new ResizeObserver(entries => {
+for (const entry of entries) {
+if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+drawChart();
+}
+}
+});
+ro.observe(chartCanvas);
+}
 
 // Splash
 window.addEventListener('load', () => {
