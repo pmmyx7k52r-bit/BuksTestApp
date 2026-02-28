@@ -865,31 +865,45 @@ const pct = Math.min(100, Math.max(0, ((sw - cur) / (sw - gw)) * 100));
 document.getElementById('w-progress').style.width = pct + '%';
 }
 
-// ── Weekly Saturday target ──
-// Find the most recent Saturday entry as the weekly baseline
-// Saturday = day of week 6
+// ── Weekly development ──
+// Use last Saturday as baseline if available, otherwise use the most recent entry from before today
 const sortedLog = [...wLog].sort((a, b) => a.date.localeCompare(b.date));
+
+// Find last Saturday entry
 const satEntries = sortedLog.filter(e => new Date(e.date + 'T12:00:00').getDay() === 6);
+
+// Find the weekly baseline: last Saturday, or if none, the oldest entry this week (Mon-today)
+const todayDate = new Date(); todayDate.setHours(12,0,0,0);
+const dayOfWeek = todayDate.getDay(); // 0=Sun, 1=Mon...6=Sat
+const daysToLastSat = dayOfWeek === 0 ? 1 : dayOfWeek; // days since last Saturday
+const lastSatDate = new Date(todayDate);
+lastSatDate.setDate(todayDate.getDate() - daysToLastSat);
+const lastSatStr2 = lastSatDate.toISOString().split('T')[0];
+
+// Baseline = entry on last Saturday, or first entry of the week, or first ever entry
+let baseline = null;
+const satEntry = sortedLog.find(e => e.date === lastSatStr2);
+if (satEntry) {
+baseline = satEntry;
+} else {
+// Find the most recent entry at or before last Saturday
+const before = sortedLog.filter(e => e.date <= lastSatStr2);
+baseline = before.length > 0 ? before[before.length - 1] : sortedLog[0];
+}
 
 const weeklyEl = document.getElementById('w-weekly');
 const weeklyVal = document.getElementById('w-weekly-val');
 const weeklyNote = document.getElementById('w-weekly-note');
-
-if (satEntries.length >= 1) {
 weeklyEl.style.display = 'flex';
-const lastSat = satEntries[satEntries.length - 1];
-const weekDiff = cur - lastSat.val; // negative = lost weight
 
+if (baseline && baseline.date !== sortedLog[sortedLog.length - 1].date) {
+const weekDiff = cur - baseline.val;
 weeklyVal.textContent = (weekDiff > 0 ? '+' : '') + weekDiff.toFixed(1) + ' kg';
-
-const months = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
-const lastSatDate = new Date(lastSat.date + 'T12:00:00');
-const lastSatStr = lastSatDate.getDate() + '. ' + months[lastSatDate.getMonth()];
 
 if (weekDiff <= -0.6) {
 weeklyVal.className = 'w-weekly-val good';
 weeklyNote.className = 'w-weekly-note good';
-weeklyNote.textContent = '✓ Ziel erreicht!';
+weeklyNote.textContent = '✓ Wochenziel erreicht!';
 } else if (weekDiff <= 0) {
 weeklyVal.className = 'w-weekly-val warn';
 weeklyNote.className = 'w-weekly-note warn';
@@ -900,17 +914,14 @@ weeklyNote.className = 'w-weekly-note bad';
 weeklyNote.textContent = 'über Wochenstart';
 }
 } else {
-// No Saturday entry yet — show what first Saturday target would be
-weeklyEl.style.display = 'flex';
-const today = new Date();
-const daysUntilSat = (6 - today.getDay() + 7) % 7 || 7;
-const nextSat = new Date(today);
-nextSat.setDate(today.getDate() + daysUntilSat);
+// Only one entry so far — show target for next Saturday
+const daysUntilSat = (6 - todayDate.getDay() + 7) % 7 || 7;
+const nextSat = new Date(todayDate);
+nextSat.setDate(todayDate.getDate() + daysUntilSat);
 const months = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
-const targetW = (sw || cur) - 0.6;
-weeklyVal.textContent = targetW.toFixed(1) + ' kg';
+weeklyVal.textContent = 'Ziel: ' + ((sw || cur) - 0.6).toFixed(1) + ' kg';
 weeklyVal.className = 'w-weekly-val neutral';
-weeklyNote.textContent = nextSat.getDate() + '. ' + months[nextSat.getMonth()];
+weeklyNote.textContent = 'bis Sa ' + nextSat.getDate() + '. ' + months[nextSat.getMonth()];
 weeklyNote.className = 'w-weekly-note neutral';
 }
 
@@ -1105,7 +1116,7 @@ canvas._months = months;
 function logWeight() {
 const inp = document.getElementById('w-input');
 const val = parseFloat(inp.value);
-if (!val || val < 30 || val > 300) { inp.focus(); return; }
+if (isNaN(val) || val < 20 || val > 400) { inp.focus(); return; }
 const wLog = load(K.wLog) || [];
 const t = today();
 const idx = wLog.findIndex(e => e.date === t);
@@ -1113,6 +1124,7 @@ if (idx >= 0) wLog[idx].val = val; else wLog.push({ date: t, val });
 save(K.wLog, wLog);
 inp.value = '';
 renderWeight();
+requestAnimationFrame(drawChart);
 }
 
 // Keyboard shortcuts
