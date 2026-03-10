@@ -108,10 +108,10 @@ input,select{width:100%;padding:12px;border:1px solid rgba(0,0,0,0.1);border-rad
 <h3>Morgen-Check</h3>
 <label style="font-weight:600;font-size:13px;margin-top:4px;display:block;">Schlafqualität</label>
 <div class="schlaf-grid">
-<button type="button" class="schlaf-btn" id="sq_sehr_gut" onclick="selectSchlaf(90, this)">Sehr gut<span class="schlaf-val">90 Punkte</span></button>
-<button type="button" class="schlaf-btn" id="sq_normal" onclick="selectSchlaf(80, this)">Normal<span class="schlaf-val">80 Punkte</span></button>
-<button type="button" class="schlaf-btn" id="sq_schlecht" onclick="selectSchlaf(70, this)">Schlecht<span class="schlaf-val">70 Punkte</span></button>
-<button type="button" class="schlaf-btn" id="sq_individuell" onclick="selectSchlaf(null, this)">Eigener Wert<span class="schlaf-val">z.B. Schlaftracker</span></button>
+<button type="button" class="schlaf-btn" id="sq_sehr_gut" onclick="selectSchlaf(90, document.getElementById('sq_sehr_gut'))">Sehr gut<span class="schlaf-val">90 Punkte</span></button>
+<button type="button" class="schlaf-btn" id="sq_normal" onclick="selectSchlaf(80, document.getElementById('sq_normal'))">Normal<span class="schlaf-val">80 Punkte</span></button>
+<button type="button" class="schlaf-btn" id="sq_schlecht" onclick="selectSchlaf(70, document.getElementById('sq_schlecht'))">Schlecht<span class="schlaf-val">70 Punkte</span></button>
+<button type="button" class="schlaf-btn" id="sq_individuell" onclick="selectSchlaf(null, document.getElementById('sq_individuell'))">Eigener Wert<span class="schlaf-val">z.B. Schlaftracker</span></button>
 </div>
 <div class="individuell-row" id="individuellRow">
 <input id="sleep" type="number" placeholder="Eigener Wert">
@@ -200,6 +200,7 @@ function storeSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 var loads = JSON.parse(storeGet(STORAGE_LOADS)) || myLoads;
 var state = JSON.parse(storeGet(STORAGE_STATE)) || {max:0,cur:0,block:0,used:[],date:"",pene:false,history:[],symptome:[],pauseUntil:null};
 var schlafWert = null;
+var schlafMode = null;
 var lastActionTime = null;
 var pauseTimerInterval = null;
 
@@ -337,10 +338,12 @@ for(var i=0;i<btns.length;i++) btns[i].classList.remove("selected");
 btn.classList.add("selected");
 var row = document.getElementById("individuellRow");
 if(wert === null) {
+schlafMode = "individuell"
 schlafWert = null;
 row.classList.add("open");
 document.getElementById("sleep").focus();
 } else {
+schlafMode = "preset"
 schlafWert = wert;
 row.classList.remove("open");
 document.getElementById("sleep").value = ""
@@ -348,13 +351,17 @@ document.getElementById("sleep").value = ""
 }
 
 function startDay() {
-var s = schlafWert;
-if(s === null) {
+var s;
+if(schlafMode === "preset") {
+s = schlafWert;
+} else if(schlafMode === "individuell") {
 var ind = parseFloat(document.getElementById("sleep").value);
-if(isNaN(ind) || ind <= 0) { showToast("Bitte Schlafqualitaet eingeben!"); return; }
+if(isNaN(ind) || ind <= 0) { showToast("Bitte Schlafwert eingeben!"); return; }
 s = ind;
+} else {
+showToast("Bitte Schlafqualitaet auswaehlen!");
+return;
 }
-if(s === null || s === undefined) { showToast("Bitte Schlafqualitaet auswaehlen!"); return; }
 var f = document.getElementById("feeling").value;
 if(!f) { showToast("Bitte Gefuehl auswaehlen!"); return; }
 var berechnetes = s + parseFloat(f);
@@ -731,7 +738,7 @@ function resetDay() { archiveDay(); resetDayInternal(); }
 function resetDayInternal() {
 var sh=state.history||[];
 state={max:0,cur:0,block:0,used:[],date:"",pene:false,history:sh,symptome:[],pauseUntil:null};
-saveAll(); schlafWert=null;
+saveAll(); schlafWert=null; schlafMode=null;
 var btns=document.querySelectorAll(".schlaf-btn");
 for(var i=0;i<btns.length;i++) btns[i].classList.remove("selected");
 document.getElementById("individuellRow").classList.remove("open");
