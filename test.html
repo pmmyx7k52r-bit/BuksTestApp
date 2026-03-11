@@ -4,10 +4,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>PacingApp 4.2.2.7</title>
+<title>PacingApp 4.2.3.2</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Pacing">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <style>
 :root{
 --green:#34c759; --yellow:#ffcc00; --orange:#ff9500; --red:#ff3b30;
@@ -98,8 +101,8 @@ input,select{width:100%;padding:12px;border:1px solid rgba(0,0,0,0.1);border-rad
 </div>
 
 <div id="pauseWrap" class="pause-wrap">
-<button class="btn-pause-big" onclick="doPause(10)">PAUSE (10 Min.)</button>
-<button class="btn-pause-small" onclick="doPause(5)">5 Min.</button>
+<button class="btn-pause-big" onclick="doPause()">Pausenbeginn</button>
+<button class="btn-pause-small" id="pauseEndeBtn" onclick="doPauseEnde()" style="display:none;">Pause beendet</button>
 </div>
 <div id="pauseHint" class="pause-hint">Hinweis: Ruhe zur Puls-Normalisierung ist KEINE Pause!</div>
 <div id="rollingWarnBox" class="rolling-warn">Mehrere Tage im roten Bereich! Auf Rolling PENE aufpassen!</div>
@@ -108,10 +111,10 @@ input,select{width:100%;padding:12px;border:1px solid rgba(0,0,0,0.1);border-rad
 <h3>Morgen-Check</h3>
 <label style="font-weight:600;font-size:13px;margin-top:4px;display:block;">Schlafqualität</label>
 <div class="schlaf-grid">
-<button type="button" class="schlaf-btn" id="sq_sehr_gut" onclick="selectSchlaf(90, document.getElementById('sq_sehr_gut'))">Sehr gut<span class="schlaf-val">90 Punkte</span></button>
-<button type="button" class="schlaf-btn" id="sq_normal" onclick="selectSchlaf(80, document.getElementById('sq_normal'))">Normal<span class="schlaf-val">80 Punkte</span></button>
-<button type="button" class="schlaf-btn" id="sq_schlecht" onclick="selectSchlaf(70, document.getElementById('sq_schlecht'))">Schlecht<span class="schlaf-val">70 Punkte</span></button>
-<button type="button" class="schlaf-btn" id="sq_individuell" onclick="selectSchlaf(null, document.getElementById('sq_individuell'))">Eigener Wert<span class="schlaf-val">z.B. Schlaftracker</span></button>
+<button type="button" class="schlaf-btn" onclick="selectSchlaf(90, this)">Sehr gut<span class="schlaf-val">90 Punkte</span></button>
+<button type="button" class="schlaf-btn" onclick="selectSchlaf(80, this)">Normal<span class="schlaf-val">80 Punkte</span></button>
+<button type="button" class="schlaf-btn" onclick="selectSchlaf(70, this)">Schlecht<span class="schlaf-val">70 Punkte</span></button>
+<button type="button" class="schlaf-btn" onclick="selectSchlaf(null, this)">Eigener Wert<span class="schlaf-val">z.B. Schlaftracker</span></button>
 </div>
 <div class="individuell-row" id="individuellRow">
 <input id="sleep" type="number" placeholder="Eigener Wert">
@@ -280,6 +283,7 @@ archiveDay(); resetDayInternal(); renderCatalog(); return;
 }
 if(state.max > 0) { showMainUI(); updateDisplay(); checkPauseUntil(); }
 renderCatalog();
+setInterval(checkPauseUntil, 30000);
 };
 
 function buildSymptomGrid() {
@@ -333,6 +337,7 @@ document.getElementById("rollingWarnBox").style.display = (red >= 3 && !last2ok)
 }
 
 function selectSchlaf(wert, btn) {
+if(!btn) { showToast("Fehler: kein Button"); return; }
 var btns = document.querySelectorAll(".schlaf-btn");
 for(var i=0;i<btns.length;i++) btns[i].classList.remove("selected");
 btn.classList.add("selected");
@@ -707,15 +712,29 @@ for(var i=0;i<combined.length;i++) div.appendChild(makeEntryRow(combined[i]));
 renderUsedPreview();
 }
 
-function doPause(minuten) {
-var min = minuten||10;
+function doPause() {
 state.block=0; state.pene=false;
-state.used.push({n:"Pause",v:0,t:nowTime(),ts:Date.now(),pos:"liegend"});
+state.used.push({n:"Pausenbeginn",v:0,t:nowTime(),ts:Date.now(),pos:"liegend"});
 saveAll(); updateDisplay();
-showToast("Pause ("+min+" Min.)");
+showToast("Pausenbeginn erfasst");
 stopPauseTimer(); checkBelastungsdichte();
-state.pauseUntil = Date.now() + min * 60 * 1000;
-saveAll();
+document.getElementById("pauseEndeBtn").style.display = "block"
+document.querySelector(".btn-pause-big").style.display = "none"
+}
+
+function doPauseEnde() {
+var jetzt = Date.now();
+var letzterBeginn = null;
+for(var i = state.used.length-1; i >= 0; i--) {
+if(state.used[i].n === "Pausenbeginn") { letzterBeginn = state.used[i].ts; break; }
+}
+var minuten = letzterBeginn ? Math.round((jetzt - letzterBeginn) / 60000) : 0;
+state.used.push({n:"Pause beendet ("+minuten+" Min.)",v:0,t:nowTime(),ts:jetzt,pos:"aufrecht"});
+saveAll(); updateDisplay();
+showToast("Pause: "+minuten+" Min.");
+startPauseTimer();
+document.getElementById("pauseEndeBtn").style.display = "none"
+document.querySelector(".btn-pause-big").style.display = "block"
 }
 
 function undoLast() {
@@ -836,7 +855,6 @@ wrap.appendChild(inp); wrap.appendChild(btn);
 containerEl.appendChild(wrap);
 }
 
-setInterval(checkPauseUntil, 30000);
 </script>
 
 </body>
