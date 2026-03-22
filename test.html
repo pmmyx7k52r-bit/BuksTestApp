@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pace v1.1</title>
+<title>Pace v1.5</title>
 
 <style>
 body {
@@ -30,7 +30,7 @@ padding: 15px;
 margin: 10px 0;
 border-radius: 12px;
 border: none;
-font-size: 18px;
+font-size: 17px;
 font-weight: bold;
 }
 
@@ -47,7 +47,21 @@ margin-top: 4px;
 .gray { background: #e5e5ea; }
 
 .status {
-font-size: 22px;
+font-size: 28px;
+font-weight: bold;
+padding: 10px;
+border-radius: 12px;
+color: white;
+}
+
+.energy {
+font-size: 14px;
+opacity: 0.7;
+margin-top: 5px;
+}
+
+.timer {
+font-size: 30px;
 margin-top: 10px;
 font-weight: bold;
 }
@@ -82,36 +96,41 @@ border-bottom: 1px solid #eee;
 <div id="app" class="hidden">
 
 <div class="card">
-<h2>Energie heute</h2>
-<div id="energy" style="font-size:40px;">100%</div>
 <div id="statusText" class="status">Alles ok</div>
+<div id="energy" class="energy">Energie: 100%</div>
+<div id="timer" class="timer hidden">03:00</div>
 </div>
 
 <div class="card">
-<button class="button green" onclick="addLoad(2,'Kurze Belastung')">
-🟢 Kurze Belastung
-<div class="sub">Puls hoch • kurz angestrengt</div>
+<h3>Was ist gerade passiert?</h3>
+
+<button class="button orange" onclick="startFocus()">
+🟠 Ich starte jetzt 3 Minuten Fokus
 </button>
 
-<button class="button yellow" onclick="addLoad(10,'Alltag')">
-🟡 Alltag
-<div class="sub">Haushalt • reden • einkaufen</div>
+<button class="button green" onclick="addLoad(2,'Kurz körperlich aktiv')">
+🟢 Ich war kurz körperlich aktiv
+<div class="sub">Treppen • Tragen • Puls hoch</div>
 </button>
 
-<button class="button orange" onclick="addLoad(20,'Kopf an')">
-🟠 Kopf an
-<div class="sub">denken • planen • Bildschirm</div>
+<button class="button yellow" onclick="addLoad(5,'Länger bewegt')">
+🟡 Ich habe mich länger bewegt
+<div class="sub">Gehen • stehen • unterwegs</div>
 </button>
 
-<button class="button red" onclick="addLoad(30,'Zu viel')">
-🔴 Zu viel
-<div class="sub">Stress • Druck • überziehen</div>
+<button class="button yellow" onclick="addLoad(7,'Etwas erledigt')">
+🟡 Ich habe etwas erledigt
+<div class="sub">Haushalt • Gespräch • Einkaufen</div>
 </button>
+
+<button class="button red" onclick="addLoad(20,'Zu viel für mich')">
+🔴 Das war zu viel für mich
+</button>
+
 </div>
 
 <div class="card">
 <button class="button gray" onclick="pause()">Ich mache Pause</button>
-<button class="button gray" onclick="undoLast()">Letzten Eintrag löschen</button>
 </div>
 
 <div class="card">
@@ -121,18 +140,19 @@ border-bottom: 1px solid #eee;
 <div class="card">
 <h3>Heute</h3>
 <div id="log" class="log"></div>
+<button class="button gray" onclick="undoLast()">Letzten Eintrag löschen</button>
 </div>
 
 </div>
 
 <script>
 let energy = 100;
-let spentSinceBreak = 0;
 let log = [];
+let focusTimer = null;
+let timeLeft = 180;
 
 function startDay(value) {
 energy = value;
-spentSinceBreak = 0;
 log = [];
 
 document.getElementById("startScreen").classList.add("hidden");
@@ -140,55 +160,76 @@ document.getElementById("app").classList.remove("hidden");
 
 updateUI();
 renderLog();
+}
 
-if (value === 100) showMessage("Du kannst normal planen.");
-if (value === 80) showMessage("Heute etwas vorsichtiger.");
-if (value === 60) showMessage("Heute nur das Nötigste.");
+function startFocus() {
+if (focusTimer) return;
+
+timeLeft = 180;
+document.getElementById("timer").classList.remove("hidden");
+
+focusTimer = setInterval(() => {
+timeLeft--;
+updateTimer();
+
+if (timeLeft <= 0) {
+clearInterval(focusTimer);
+focusTimer = null;
+
+addLoad(3, "3 Min Fokus geschafft");
+pause(); // zwingende Pause nach Fokus
+showMessage("Stopp. Jetzt Pause.");
+
+document.getElementById("timer").classList.add("hidden");
+}
+}, 1000);
+}
+
+function updateTimer() {
+let min = Math.floor(timeLeft / 60);
+let sec = timeLeft % 60;
+document.getElementById("timer").innerText =
+String(min).padStart(2, '0') + ":" + String(sec).padStart(2, '0');
 }
 
 function addLoad(amount, label) {
 energy -= amount;
-spentSinceBreak += amount;
-
 if (energy < 0) energy = 0;
 
 const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-log.unshift({
-time: time,
-label: label,
-amount: amount
-});
+log.unshift({ time, label, amount });
 
 updateUI();
 renderLog();
-
-if (amount >= 20) {
-showMessage("Das war anstrengend. Mach jetzt Pause.");
-}
-
-if (spentSinceBreak >= 25) {
-showMessage("Du hast gerade viel gemacht. Pause einlegen.");
-}
-
 checkLimits();
+}
+
+function pause() {
+if (focusTimer) {
+clearInterval(focusTimer);
+focusTimer = null;
+document.getElementById("timer").classList.add("hidden");
+}
+
+log.unshift({
+time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}),
+label: "Pause",
+amount: 0
+});
+
+renderLog();
+showMessage("Erholung läuft.");
 }
 
 function undoLast() {
 if (log.length === 0) return;
 
 const last = log.shift();
-
 energy += last.amount;
-spentSinceBreak -= last.amount;
-
 if (energy > 100) energy = 100;
-if (spentSinceBreak < 0) spentSinceBreak = 0;
 
 updateUI();
 renderLog();
-
-showMessage("Letzter Eintrag entfernt.");
 }
 
 function renderLog() {
@@ -198,33 +239,32 @@ logDiv.innerHTML = ""
 log.forEach(entry => {
 const div = document.createElement("div");
 div.className = "log-entry"
-div.innerText = `${entry.time} – ${entry.label} (-${entry.amount})`;
+div.innerText = `${entry.time} – ${entry.label} ${entry.amount ? "(-"+entry.amount+")":""}`;
 logDiv.appendChild(div);
 });
 }
 
-function pause() {
-spentSinceBreak = 0;
-showMessage("Erholung läuft.");
-}
-
 function updateUI() {
-document.getElementById("energy").innerText = energy + "%"
+const statusEl = document.getElementById("statusText");
 
 let status = "Alles ok"
+let color = "#34c759"
 
-if (energy < 60) status = "Langsam machen"
-if (energy < 40) status = "Du wirst müde"
-if (energy < 30) status = "Stopp. Sonst Crash"
-if (energy < 20) status = "Erholung jetzt zwingend"
+if (energy < 70) { status = "Langsam machen" color = "#ffcc00" }
+if (energy < 55) { status = "Pause einlegen" color = "#ff9500" }
+if (energy < 40) { status = "Stopp jetzt" color = "#ff3b30" }
+if (energy < 25) { status = "Zu spät – nur noch Erholung" color = "#ff3b30" }
 
-document.getElementById("statusText").innerText = status;
+statusEl.innerText = status;
+statusEl.style.background = color;
+
+document.getElementById("energy").innerText = "Energie: " + energy + "%"
 }
 
 function checkLimits() {
-if (energy < 40) showMessage("Du wirst müde. Reduziere jetzt.");
-if (energy < 30) showMessage("Stopp. Sonst Crash.");
-if (energy < 20) showMessage("Zu spät. Erholung jetzt zwingend.");
+if (energy < 55) showMessage("Jetzt Pause einlegen.");
+if (energy < 40) showMessage("Stopp. Sonst Crash.");
+if (energy < 25) showMessage("Zu spät – nur noch Erholung.");
 }
 
 function showMessage(text) {
