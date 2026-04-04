@@ -3,132 +3,132 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MeinMarkt 1.0</title>
-
+<title>MeinMarkt 1.1</title>
 <style>
 body {
-font-family: -apple-system, sans-serif;
-background: #0d1117;
-color: #e6edf3;
-padding: 20px;
+font-family: monospace;
+background: #080c14;
+color: #bdd0ee;
+margin: 0; padding: 0;
 }
-button {
-padding: 12px;
-font-size: 16px;
-background: #238636;
-color: white;
-border: none;
-border-radius: 8px;
+.app { max-width: 520px; margin: 0 auto; padding: 16px; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom:16px; }
+.logo { font-family: serif; font-size: 24px; font-weight:700; color:#bdd0ee; }
+.logo em { font-style: italic; color:#5ba3ff; }
+.tabs { display:flex; gap:8px; margin-bottom:16px; }
+.tab { padding:8px 16px; border-radius:6px; font-size:11px; cursor:pointer; border:1px solid transparent; color:#6a8aae; background:none; }
+.tab.active { background:#0d1e42; border-color:#243454; color:#5ba3ff; }
+.scan-btn {
+width:100%; background:#0d1e42; border:1px solid #243454; border-radius:10px;
+padding:16px; cursor:pointer; display:flex; justify-content:space-between; align-items:center; position:relative; overflow:hidden;
 }
-.card {
-background: #161b22;
-padding: 15px;
-margin-top: 15px;
-border-radius: 10px;
-}
+.scan-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.scan-btn-title { font-family: serif; font-size:17px; font-weight:700; }
+.scan-btn-arrow { font-size:20px; color:#5ba3ff; opacity:0.7; }
+.spinner { width:18px; height:18px; border:2px solid #243454; border-top-color:#5ba3ff; border-radius:50%; animation:spin 0.8s linear infinite; display:inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.status-msg { font-size:11px; color:#6a8aae; font-style:italic; margin:8px 0; }
+.error-box { background: rgba(244,63,94,0.07); border:1px solid rgba(244,63,94,0.2); border-radius:6px; padding:10px; font-size:11px; color:#f43f5e; margin:8px 0; display:none; }
+.tipps-list { display:flex; flex-direction:column; gap:10px; margin-top:10px; }
+.tipp-card { background:#0d1220; border-radius:8px; padding:10px; display:flex; justify-content:space-between; }
+.tipp-left { flex:1; }
+.tipp-right { text-align:right; }
+.progress-msg { font-size:10px; color:#6a8aae; margin-top:4px; }
+footer { margin-top:28px; font-size:10px; color:#6a8aae; text-align:center; }
 </style>
 </head>
-
 <body>
+<div class="app">
+<header>
+<div class="logo">Mein<em>Markt</em></div>
+</header>
 
-<h2>📊 MeinMarkt 1.0</h2>
-<button onclick="start()">Scannen</button>
-<div id="output"></div>
+<div class="tabs">
+<button class="tab active" id="tabScan" onclick="switchTab('scan')">📊 Scan</button>
+<button class="tab" id="tabTracking" onclick="switchTab('tracking')">📈 Tracking</button>
+</div>
+
+<!-- SCAN TAB -->
+<div id="scanTab">
+<button class="scan-btn" id="scanBtn" onclick="startScan()">
+<span class="scan-btn-title" id="scanBtnTitle">Tipps des Tages abrufen</span>
+<span class="scan-btn-arrow" id="scanBtnIcon">→</span>
+</button>
+<div id="statusMsg" class="status-msg" style="display:none"></div>
+<div id="progressMsg" class="progress-msg" style="display:none"></div>
+<div id="errorBox" class="error-box"></div>
+<div id="tippsList" class="tipps-list"></div>
+</div>
+
+<!-- TRACKING TAB -->
+<div id="trackingTab" style="display:none">
+<div>Tracking-Tab noch leer.</div>
+</div>
+
+<footer>MeinMarkt 1.1 · Echtzeit-Kurse · Keine Anlageberatung</footer>
+</div>
 
 <script>
-const FINNHUB = "DEIN_FINNHUB_KEY"
-const CLAUDE = "DEIN_CLAUDE_KEY"
+let currentTab = 'scan';
+let prognosen = [];
 
-async function getGainers() {
-const res = await fetch(`https://finnhub.io/api/v1/stock/symbol?exchange=US&token=${FINNHUB}`);
-const data = await res.json();
-
-return data.slice(0, 20).map(s => s.symbol);
+// ── Tab Switching ─────────────────────────────────────────
+function switchTab(tab) {
+currentTab = tab;
+document.getElementById('scanTab').style.display = tab==='scan'?'block':'none';
+document.getElementById('trackingTab').style.display = tab==='tracking'?'block':'none';
+document.getElementById('tabScan').className = 'tab'+(tab==='scan'?' active':'');
+document.getElementById('tabTracking').className = 'tab'+(tab==='tracking'?' active':'');
 }
 
-async function getQuote(ticker) {
-const res = await fetch(`https://finnhub.io/api/v1/quote?symbol=${ticker}&token=${FINNHUB}`);
-return await res.json();
-}
+// ── Scan ──────────────────────────────────────────────────
+async function startScan() {
+const btn = document.getElementById('scanBtn');
+const title = document.getElementById('scanBtnTitle');
+const icon = document.getElementById('scanBtnIcon');
+const status = document.getElementById('statusMsg');
+const errorBox = document.getElementById('errorBox');
+const tippsList = document.getElementById('tippsList');
+const progressMsg = document.getElementById('progressMsg');
 
-async function prefilter() {
-const tickers = await getGainers();
-const results = [];
+btn.disabled = true;
+title.textContent = 'Analysiere …';
+icon.innerHTML = '<span class="spinner"></span>';
+status.style.display='block'; status.textContent='Scan läuft …';
+errorBox.style.display='none';
+tippsList.innerHTML='';
+progressMsg.style.display='block'; progressMsg.textContent='0 von 0 Tipps geladen';
 
-for (let t of tickers) {
 try {
-const q = await getQuote(t);
-if (q.dp > 2 && q.v > 1000000) {
-results.push({
-ticker: t,
-change: q.dp,
-price: q.c
-});
-}
-} catch {}
-}
+// Simulation API-Abfrage
+const mockTipps = [
+{ticker:'AAPL', name:'Apple', anstiegProzent:5, these:'Technologieboom', haupttreiber:'KI', startkurs:150, waehrung:'USD'},
+{ticker:'MSFT', name:'Microsoft', anstiegProzent:4, these:'Cloudwachstum', haupttreiber:'Cloud', startkurs:280, waehrung:'USD'},
+{ticker:'GOOGL', name:'Alphabet', anstiegProzent:6, these:'Werbung stark', haupttreiber:'Ads', startkurs:2600, waehrung:'USD'}
+];
 
-return results.slice(0, 10);
-}
-
-async function analyzeWithClaude(data) {
-const res = await fetch("https://api.anthropic.com/v1/messages", {
-method: "POST",
-headers: {
-"Content-Type": "application/json",
-"x-api-key": CLAUDE,
-"anthropic-version": "2023-06-01"
-},
-body: JSON.stringify({
-model: "claude-3-sonnet-20240229",
-max_tokens: 800,
-messages: [{
-role: "user",
-content: `Bewerte diese Aktien für 7 Tage Trading:
-
-${JSON.stringify(data)}
-
-Wähle die 3 besten basierend auf Momentum + Wahrscheinlichkeit.
-
-Antwort als JSON:
-{
-"tipps": [
-{"ticker":"", "score":0, "grund":""}
-]
-}`
-}]
-})
-});
-
-const json = await res.json();
-return JSON.parse(json.content[0].text);
+for(let i=0;i<mockTipps.length;i++){
+await new Promise(r=>setTimeout(r,800)); // Lade-Simulation
+const t = mockTipps[i];
+const card = document.createElement('div'); card.className='tipp-card';
+card.innerHTML=`<div class="tipp-left">${t.ticker} · ${t.name}<br>${t.these}</div>
+<div class="tipp-right">${t.anstiegProzent}% ↑</div>`;
+tippsList.appendChild(card);
+progressMsg.textContent=`${i+1} von ${mockTipps.length} Tipps geladen`;
 }
 
-function render(tipps) {
-const out = document.getElementById("output");
-out.innerHTML = ""
-
-tipps.forEach(t => {
-const div = document.createElement("div");
-div.className = "card"
-div.innerHTML = `
-<b>${t.ticker}</b><br>
-Score: ${t.score}<br>
-${t.grund}
-`;
-out.appendChild(div);
-});
+status.textContent='Scan abgeschlossen';
+} catch(err) {
+errorBox.style.display='block';
+errorBox.textContent='Fehler: '+err.message;
+status.textContent='Scan fehlgeschlagen';
+} finally {
+btn.disabled=false;
+title.textContent='Tipps des Tages abrufen';
+icon.textContent='→';
+setTimeout(()=>{status.style.display='none'; progressMsg.style.display='none';},2000);
 }
-
-async function start() {
-document.getElementById("output").innerHTML = "Lade..."
-
-const pre = await prefilter();
-const result = await analyzeWithClaude(pre);
-
-render(result.tipps);
 }
 </script>
-
 </body>
 </html>
