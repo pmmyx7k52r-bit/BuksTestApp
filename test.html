@@ -37,11 +37,22 @@ const WATCHLIST = [
 "AI","IONQ","LCID","DKNG","HOOD","QS","BB","NIO"
 ];
 
-// ── EUR Conversion ─────────────────────────
-async function getEURRate(){
+// ── EUR Kurs (FIXED) ─────────────────────────
+async function getEURRate() {
+try {
 const r = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=EUR");
 const d = await r.json();
+
+if (!d || !d.rates || !d.rates.EUR) {
+throw new Error("Kein EUR Kurs");
+}
+
 return d.rates.EUR;
+
+} catch (e) {
+console.log("Fallback EUR genutzt");
+return 0.92;
+}
 }
 
 // ── Quote ─────────────────────────
@@ -50,20 +61,8 @@ const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${t}&token=${FINNH
 return await r.json();
 }
 
-// ── News ─────────────────────────
-async function getNews(t){
-try{
-const r = await fetch(`https://finnhub.io/api/v1/company-news?symbol=${t}&from=2024-01-01&to=2026-01-01&token=${FINNHUB}`);
-const d = await r.json();
-return d.length;
-}catch{
-return 0;
-}
-}
-
-// ── Prefilter + Scoring ─────────────────────────
+// ── Prefilter ─────────────────────────
 async function prefilter(){
-
 let results = [];
 
 for(let i=0;i<WATCHLIST.length;i++){
@@ -73,31 +72,19 @@ document.getElementById("progress").innerText =
 
 try{
 let q = await getQuote(WATCHLIST[i]);
-let newsCount = await getNews(WATCHLIST[i]);
 
-let score = 0;
-
-// Momentum
-score += q.dp;
-
-// News Boost
-if(newsCount > 5) score += 3;
-if(newsCount > 10) score += 5;
-
-// Filter
 if(q.dp > 2 && q.c > 5 && q.c < 200){
 results.push({
 ticker: WATCHLIST[i],
 price: q.c,
-change: q.dp,
-score: score
+change: q.dp
 });
 }
 
 }catch{}
 }
 
-return results.sort((a,b)=>b.score-a.score).slice(0,6);
+return results.sort((a,b)=>b.change-a.change).slice(0,6);
 }
 
 // ── Claude Analyse ─────────────────────────
@@ -137,7 +124,13 @@ Antwort JSON:
 });
 
 let json = await res.json();
-return JSON.parse(json.content[0].text);
+let text = json.content?.[0]?.text;
+
+try {
+return JSON.parse(text);
+} catch {
+throw new Error("KI Antwort ungültig");
+}
 }
 
 // ── Render ─────────────────────────
@@ -196,7 +189,7 @@ document.getElementById("status").innerText="KI analysiert..."
 
 let result = await analyze(pre);
 
-// Hebel begrenzen
+// Sicherheit
 result.tipps = result.tipps.map(t=>{
 if(t.hebel > 5) t.hebel = 5;
 if(t.hebel < 1) t.hebel = 1;
