@@ -1303,11 +1303,16 @@ function initNotifications() {
         console.log('Notifications nicht unterstützt');
         return;
     }
-    var swCode = document.getElementById('swScript').textContent;
-    var blob = new Blob([swCode], {type: 'application/javascript'});
-    var swUrl = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(swUrl).then(function(reg) {
+    navigator.serviceWorker.register('/PacingApp/sw.js').then(function(reg) {
         _swRegistration = reg;
+        // Auf aktiven SW warten
+        if (reg.installing) {
+            reg.installing.addEventListener('statechange', function() {
+                if (reg.active) { swSendLang(); }
+            });
+        } else if (reg.active) {
+            swSendLang();
+        }
         console.log('SW registriert');
     }).catch(function(err) {
         console.log('SW Fehler:', err);
@@ -1398,6 +1403,24 @@ function sendNotification(title, body, tag, requireInteraction) {
 }
 
 // Notification-Triggers für alle kritischen Ereignisse
+function swSendLang() {
+    if (_swRegistration && _swRegistration.active) {
+        _swRegistration.active.postMessage({type: 'SET_LANG', lang: _lang});
+    }
+}
+
+function swPauseStart(ts) {
+    if (_swRegistration && _swRegistration.active) {
+        _swRegistration.active.postMessage({type: 'PAUSE_START', ts: ts, lang: _lang});
+    }
+}
+
+function swPauseEnd() {
+    if (_swRegistration && _swRegistration.active) {
+        _swRegistration.active.postMessage({type: 'PAUSE_END'});
+    }
+}
+
 function notifyWennNoetig(warnTyp, warnText) {
     if (!_notifEnabled) { return; }
     var jetzt = Date.now();
@@ -2058,6 +2081,7 @@ function doPauseBeginn() {
     stopPauseTimer();
     document.getElementById("btnPauseBeginn").style.display = "none";
     document.getElementById("btnPauseEnde").style.display = "block";
+    swPauseStart(jetzt);
     showToast(t("toastPauseBeginn"));
     updateDisplay();
 }
@@ -2104,6 +2128,7 @@ function endePause(auto) {
     var lpb2 = document.getElementById("langePauseBar");
     if (lpb2) { lpb2.style.display = "none"; }
     _langePauseHingewiesen = false;
+    swPauseEnd();
     _lastPauseEndeTs = Date.now();
     if (!auto) {
         trackDayMinPct();
