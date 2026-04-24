@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kroatisch Master v1.6.1</title>
+<title>Kroatisch Master v1.6.2 - REPAIR</title>
 <style>
 :root { --hr-blue: #002395; --hr-red: #ff0000; --bg: #f0f2f5; --green: #28a745; }
 body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 15px; }
@@ -15,25 +15,20 @@ input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; 
 .btn-green { background: var(--green); }
 .btn-flash { background: #000; }
 .btn-stop { background: var(--hr-red); display: none; }
-
-/* Einklappbares Wörterbuch */
 .dict-toggle { background: #eee; color: #555; padding: 8px; border-radius: 8px; text-align: center; cursor: pointer; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; }
-.dict-toggle:hover { background: #e0e0e0; }
-#dictContent { display: none; } /* Standardmäßig eingeklappt */
+#dictContent { display: none; }
 .dict-container { max-height: 200px; overflow-y: auto; font-size: 0.9rem; border: 1px solid #eee; border-radius: 8px; padding: 5px; background: #fff; }
 .dict-entry { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f9f9f9; cursor: pointer; }
-.dict-entry:hover { background: #f0f4ff; }
-
-/* Lernbereich */
 .prompt { font-size: 1.4rem; text-align: center; margin: 15px 0; font-weight: bold; color: #333; }
 .feedback { text-align: center; height: 20px; font-weight: bold; margin-bottom: 10px; }
-
-/* Brain-Programmierung */
 .flash-box { height: 140px; display: flex; justify-content: center; align-items: center; font-size: 2.2rem; font-weight: 900; color: var(--hr-blue); text-align: center; background: #fff; border: 4px solid #eee; border-radius: 10px; overflow: hidden; }
-.flash-active { background: #000 !important; color: #fff !important; border-color: #333 !important; }
+.flash-active { background: #000 !important; color: #fff !important; }
+.import-msg { background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 0.8rem; border: 1px solid #ffeeba; display: none; }
 </style>
 </head>
 <body>
+
+<div id="importNotice" class="import-msg">Alte Wörter wurden gefunden und importiert!</div>
 
 <div class="card">
 <h2>1. Erfassung & Wörterbuch</h2>
@@ -65,7 +60,34 @@ input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; 
 </div>
 
 <script>
-let vocabs = JSON.parse(localStorage.getItem('masterDict')) || [];
+// --- DATEN-RETTER FUNKTION ---
+function recoverData() {
+let current = JSON.parse(localStorage.getItem('masterDict')) || [];
+// Prüfe alte Speicherplätze
+const keys = ['myVocabManual', 'myDictionary', 'simpleDict', 'myFullDict'];
+let foundOld = false;
+
+keys.forEach(key => {
+const oldData = JSON.parse(localStorage.getItem(key));
+if (oldData && oldData.length > 0) {
+// Füge nur hinzu, was noch nicht da ist
+oldData.forEach(item => {
+if (!current.some(c => c.hr === item.hr)) {
+current.push(item);
+foundOld = true;
+}
+});
+}
+});
+
+if (foundOld) {
+localStorage.setItem('masterDict', JSON.stringify(current));
+document.getElementById('importNotice').style.display = 'block';
+}
+return current;
+}
+
+let vocabs = recoverData();
 let currentTask = null;
 let flashTimer = null;
 
@@ -113,13 +135,14 @@ document.getElementById('feedback').innerText = ""
 
 function checkAnswer() {
 const input = document.getElementById('learnInput').value.trim().toLowerCase();
-const f = document.getElementById('feedback');
 if(input === currentTask.hr.toLowerCase() || input === currentTask.de.toLowerCase()) {
-f.style.color = "green" f.innerText = "✓ Richtig"
+document.getElementById('feedback').style.color = "green"
+document.getElementById('feedback').innerText = "✓ Richtig"
 speak(currentTask.hr);
 setTimeout(nextTask, 1000);
 } else {
-f.style.color = "red" f.innerText = "Versuch es nochmal"
+document.getElementById('feedback').style.color = "red"
+document.getElementById('feedback').innerText = "Falsch"
 }
 }
 
@@ -141,7 +164,7 @@ document.getElementById('startBtn').style.display = "block"
 document.getElementById('stopBtn').style.display = "none"
 const disp = document.getElementById('flashDisplay');
 disp.classList.remove('flash-active');
-disp.innerText = "BEREIT"
+disp.innerText = "START"
 }
 
 function speak(txt) {
