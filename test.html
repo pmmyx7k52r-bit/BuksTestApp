@@ -3,165 +3,172 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Kroatisch Master v1.7.2</title>
+<title>Kroatisch Master v1.7.3</title>
 <style>
 :root { --hr-blue: #002395; --bg: #f0f2f5; }
-body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 15px; margin: 0; }
-.card { max-width: 500px; width: 100%; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; box-sizing: border-box; }
-h2 { color: var(--hr-blue); font-size: 0.9rem; margin: 0 0 12px 0; text-transform: uppercase; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; font-size: 1rem; }
-.btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; margin-bottom: 5px; font-size: 1rem; }
+body { font-family: sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; }
+.card { max-width: 500px; width: 100%; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 10px; box-sizing: border-box; }
+h2 { color: var(--hr-blue); font-size: 0.9rem; margin: 0 0 10px 0; text-transform: uppercase; border-bottom: 1px solid #eee; }
+input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 8px; box-sizing: border-box; font-size: 1rem; }
+.btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; margin-bottom: 5px; }
 .btn-add { background: var(--hr-blue); }
 .btn-flash { background: #000; }
 .btn-stop { background: #ff4444; display: none; }
-/* Wörterbuch Stabilisierung */
-.dict-toggle { background: #f8f9fa; color: #666; padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; font-size: 0.8rem; font-weight: bold; border: 1px solid #ddd; width: 100%; display: block; }
-#dictContent { display: none; margin-top: 15px; width: 100%; }
-.dict-container { max-height: 300px; overflow-y: auto; font-size: 0.9rem; background: #fff; border-radius: 8px; }
-.dict-entry { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; }
-.flash-box { height: 160px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; border: 4px solid #eee; border-radius: 12px; text-align: center; }
+/* Absolut sicheres Wörterbuch */
+.dict-toggle-btn { background: #eee; color: #333; padding: 12px; border-radius: 8px; text-align: center; cursor: pointer; font-weight: bold; width: 100%; border: 1px solid #ccc; margin-top: 5px; }
+#dictContent { display: none; margin-top: 10px; background: #fafafa; border-radius: 8px; padding: 10px; border: 1px solid #eee; }
+.dict-list { max-height: 250px; overflow-y: auto; font-size: 0.9rem; }
+.entry { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee; }
+
+.flash-box { height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; border: 4px solid #eee; border-radius: 12px; text-align: center; }
 .flash-active { background: #000 !important; color: #fff !important; }
-.flash-hr { font-size: 2.2rem; font-weight: 900; color: var(--hr-blue); }
+.flash-hr { font-size: 2rem; font-weight: 900; color: var(--hr-blue); }
 .flash-active .flash-hr { color: #fff; }
-.flash-de { font-size: 1.1rem; color: #888; margin-top: 5px; }
+.flash-de { font-size: 1rem; color: #888; }
 </style>
 </head>
 <body>
 
 <div class="card">
-<h2>1. Erfassung & Ordnung</h2>
+<h2>1. Eingabe</h2>
 <input type="text" id="hrIn" placeholder="Kroatisch">
 <input type="text" id="deIn" placeholder="Deutsch">
 <select id="catIn">
 <option value="Allgemein">Allgemein</option>
 <option value="Zahlen/Tage">Zahlen & Tage</option>
 <option value="Essen/Trinken">Essen & Trinken</option>
-<option value="Verben">Verben</option>
 </select>
-<button class="btn btn-add" onclick="save()">SPEICHERN</button>
-<button class="dict-toggle" id="tglBtn" onclick="toggleDict()">WÖRTERBUCH ANZEIGEN</button>
+<button class="btn btn-add" onclick="saveWort()">SPEICHERN</button>
+<div class="dict-toggle-btn" onclick="toggleDictionary()">WÖRTERBUCH ANZEIGEN</div>
 <div id="dictContent">
-<div id="dictionary" class="dict-container"></div>
-<button onclick="forceImport()" style="margin-top:10px; font-size:0.6rem; background:none; border:none; color:blue; text-decoration:underline; cursor:pointer;">Alte Daten manuell suchen</button>
+<div id="dictionaryList" class="dict-list"></div>
+<button onclick="emergencyImport()" style="margin-top:10px; font-size:0.7rem; color:blue; background:none; border:none; text-decoration:underline;">Daten-Rettung erzwingen</button>
 </div>
 </div>
 
-<div class="card" id="learnArea" style="display:none;">
+<div class="card" id="trainArea" style="display:none;">
 <h2>2. Training</h2>
-<div id="q" style="font-size:1.5rem; text-align:center; font-weight:bold; margin:10px;"></div>
-<input type="text" id="ans" placeholder="Antwort..." onkeypress="if(event.key==='Enter') check()">
-<div id="feed" style="text-align:center; font-weight:bold; height:20px;"></div>
+<div id="question" style="font-size:1.4rem; text-align:center; font-weight:bold; margin:10px;"></div>
+<input type="text" id="answer" placeholder="Antwort..." onkeypress="if(event.key==='Enter') checkInput()">
+<div id="feedback" style="text-align:center; height:20px; font-weight:bold;"></div>
 </div>
 
 <div class="card">
-<h2>3. Subliminal Flash (60ms)</h2>
+<h2>3. Flash (60ms)</h2>
 <div id="fBox" class="flash-box">
 <div id="fHr" class="flash-hr">START</div>
 <div id="fDe" class="flash-de">bereit</div>
 </div>
-<button id="sBtn" class="btn btn-flash" onclick="run()">ULTRA-FLASH STARTEN</button>
-<button id="tBtn" class="btn btn-stop" onclick="stop()">STOPP</button>
+<button id="sBtn" class="btn btn-flash" onclick="startFlash()">START</button>
+<button id="tBtn" class="btn btn-stop" onclick="stopFlash()">STOPP</button>
 </div>
 
 <script>
-const KEY = 'masterDict_final';
-let vocabs = JSON.parse(localStorage.getItem(KEY)) || [];
+const STORAGE_KEY = 'kroatisch_master_final_v1';
+let daten = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 
-function forceImport() {
-const oldKeys = ['masterDict_v4', 'masterDict_v3', 'masterDict_v2', 'masterDict', 'simpleDict'];
-let imported = false;
-oldKeys.forEach(k => {
-let data = JSON.parse(localStorage.getItem(k));
-if(data && data.length > 0) {
-data.forEach(item => {
-if(!vocabs.find(v => v.hr === item.hr)) {
-vocabs.push({hr: item.hr, de: item.de, cat: item.cat || 'Allgemein'});
-imported = true;
-}
-});
-}
-});
-if(imported) {
-saveState();
-alert("Daten wurden importiert!");
-location.reload();
+// 1. Einfaches Aufklappen (ohne Schnickschnack)
+function toggleDictionary() {
+const content = document.getElementById('dictContent');
+if (content.style.display === 'block') {
+content.style.display = 'none';
 } else {
-alert("Keine alten Daten gefunden.");
+content.style.display = 'block';
+refreshList();
 }
 }
 
-function saveState() {
-vocabs.sort((a, b) => a.hr.localeCompare(b.hr));
-localStorage.setItem(KEY, JSON.stringify(vocabs));
+// 2. Wörterliste anzeigen
+function refreshList() {
+const list = document.getElementById('dictionaryList');
+if (daten.length === 0) {
+list.innerHTML = "Keine Einträge gefunden."
+return;
+}
+// Sortieren
+daten.sort((a, b) => a.hr.localeCompare(b.hr));
+let html = ""
+daten.forEach(item => {
+html += `<div class="entry"><b>${item.hr}</b> <span>${item.de}</span></div>`;
+});
+list.innerHTML = html;
 }
 
-function save() {
-const h = document.getElementById('hrIn').value.trim(), d = document.getElementById('deIn').value.trim(), c = document.getElementById('catIn').value;
-if(!h || !d) return;
-vocabs.push({hr:h, de:d, cat:c});
-saveState();
+// 3. Speichern
+function saveWort() {
+const h = document.getElementById('hrIn').value.trim();
+const d = document.getElementById('deIn').value.trim();
+const c = document.getElementById('catIn').value;
+if (!h || !d) return;
+
+daten.push({hr: h, de: d, cat: c});
+localStorage.setItem(STORAGE_KEY, JSON.stringify(daten));
+document.getElementById('hrIn').value = ""
+document.getElementById('deIn').value = ""
+alert("Gespeichert!");
 location.reload();
 }
 
-function toggleDict() {
-const div = document.getElementById('dictContent');
-const btn = document.getElementById('tglBtn');
-if(div.style.display === 'block') {
-div.style.display = 'none';
-btn.innerText = 'WÖRTERBUCH ANZEIGEN';
-} else {
-div.style.display = 'block';
-btn.innerText = 'WÖRTERBUCH VERBERGEN';
-renderList();
-}
-}
-
-function renderList() {
-const container = document.getElementById('dictionary');
-container.innerHTML = vocabs.length === 0 ? "<div style='padding:10px; color:#ccc;'>Leer</div>" : ""
-const groups = vocabs.reduce((acc, obj) => { (acc[obj.cat] = acc[obj.cat] || []).push(obj); return acc; }, {});
-for (const cat in groups) {
-const h = document.createElement('div');
-h.style = "background:#eee; padding:5px; font-weight:bold; font-size:0.7rem; margin-top:10px; border-radius:4px;"
-h.innerText = cat.toUpperCase();
-container.appendChild(h);
-groups[cat].forEach(v => {
-const r = document.createElement('div'); r.className = "dict-entry"
-r.innerHTML = `<span><b>${v.hr}</b></span><span>${v.de}</span>`;
-container.appendChild(r);
+// 4. Notfall-Import
+function emergencyImport() {
+const keys = ['masterDict_final', 'masterDict_v4', 'masterDict_v3', 'masterDict_v2', 'masterDict', 'simpleDict'];
+keys.forEach(k => {
+const old = JSON.parse(localStorage.getItem(k));
+if (old && Array.isArray(old)) {
+old.forEach(o => {
+if (!daten.find(d => d.hr === o.hr)) daten.push(o);
 });
 }
+});
+localStorage.setItem(STORAGE_KEY, JSON.stringify(daten));
+location.reload();
 }
 
-let cur = null, timer = null;
-function ask() {
-cur = vocabs[Math.floor(Math.random()*vocabs.length)];
-document.getElementById('q').innerText = Math.random() > 0.5 ? cur.de : cur.hr;
-document.getElementById('ans').value = "" document.getElementById('feed').innerText = ""
+// 5. Training & Flash
+let currentItem = null;
+let flashInterval = null;
+
+if (daten.length > 0) {
+document.getElementById('trainArea').style.display = 'block';
+nextQuestion();
 }
 
-function check() {
-const val = document.getElementById('ans').value.trim().toLowerCase();
-if(val == cur.hr.toLowerCase() || val == cur.de.toLowerCase()) {
-document.getElementById('feed').style.color = "green" document.getElementById('feed').innerText = "✓"
-window.speechSynthesis.speak(new SpeechSynthesisUtterance(cur.hr));
-setTimeout(ask, 800);
-} else { document.getElementById('feed').style.color = "red" document.getElementById('feed').innerText = "×" }
+function nextQuestion() {
+currentItem = daten[Math.floor(Math.random() * daten.length)];
+document.getElementById('question').innerText = Math.random() > 0.5 ? currentItem.de : currentItem.hr;
+document.getElementById('answer').value = ""
+document.getElementById('feedback').innerText = ""
 }
 
-function run() {
-if(vocabs.length === 0) return;
-document.getElementById('sBtn').style.display='none'; document.getElementById('tBtn').style.display='block';
+function checkInput() {
+const val = document.getElementById('answer').value.trim().toLowerCase();
+if (val === currentItem.hr.toLowerCase() || val === currentItem.de.toLowerCase()) {
+document.getElementById('feedback').innerText = "Richtig!"
+window.speechSynthesis.speak(new SpeechSynthesisUtterance(currentItem.hr));
+setTimeout(nextQuestion, 1000);
+} else {
+document.getElementById('feedback').innerText = "Versuch's nochmal"
+}
+}
+
+function startFlash() {
+if (daten.length === 0) return;
+document.getElementById('sBtn').style.display = 'none';
+document.getElementById('tBtn').style.display = 'block';
 document.getElementById('fBox').classList.add('flash-active');
-timer = setInterval(() => {
-let r = vocabs[Math.floor(Math.random()*vocabs.length)];
-document.getElementById('fHr').innerText = r.hr; document.getElementById('fDe').innerText = r.de;
+flashInterval = setInterval(() => {
+const r = daten[Math.floor(Math.random() * daten.length)];
+document.getElementById('fHr').innerText = r.hr;
+document.getElementById('fDe').innerText = r.de;
 }, 60);
 }
 
-function stop() { clearInterval(timer); document.getElementById('sBtn').style.display='block'; document.getElementById('tBtn').style.display='none'; document.getElementById('fBox').classList.remove('flash-active'); document.getElementById('fHr').innerText = "PAUSE" }
-
-if(vocabs.length > 0) { document.getElementById('learnArea').style.display = 'block'; ask(); }
+function stopFlash() {
+clearInterval(flashInterval);
+document.getElementById('sBtn').style.display = 'block';
+document.getElementById('tBtn').style.display = 'none';
+document.getElementById('fBox').classList.remove('flash-active');
+}
 </script>
 </body>
 </html>
