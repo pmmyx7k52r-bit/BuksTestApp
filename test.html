@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Kroatisch Master v1.7.1</title>
+<title>Kroatisch Master v1.7.2</title>
 <style>
 :root { --hr-blue: #002395; --bg: #f0f2f5; }
 body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 15px; margin: 0; }
@@ -14,9 +14,10 @@ input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radiu
 .btn-add { background: var(--hr-blue); }
 .btn-flash { background: #000; }
 .btn-stop { background: #ff4444; display: none; }
-.dict-toggle { background: #f8f9fa; color: #666; padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; font-size: 0.8rem; font-weight: bold; border: 1px solid #ddd; }
-#dictContent { display: none; margin-top: 15px; }
-.dict-container { max-height: 250px; overflow-y: auto; font-size: 0.9rem; }
+/* Wörterbuch Stabilisierung */
+.dict-toggle { background: #f8f9fa; color: #666; padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; font-size: 0.8rem; font-weight: bold; border: 1px solid #ddd; width: 100%; display: block; }
+#dictContent { display: none; margin-top: 15px; width: 100%; }
+.dict-container { max-height: 300px; overflow-y: auto; font-size: 0.9rem; background: #fff; border-radius: 8px; }
 .dict-entry { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #eee; }
 .flash-box { height: 160px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; border: 4px solid #eee; border-radius: 12px; text-align: center; }
 .flash-active { background: #000 !important; color: #fff !important; }
@@ -32,18 +33,21 @@ input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radiu
 <input type="text" id="hrIn" placeholder="Kroatisch">
 <input type="text" id="deIn" placeholder="Deutsch">
 <select id="catIn">
-<option value="Allgemein">Kategorie: Allgemein</option>
+<option value="Allgemein">Allgemein</option>
 <option value="Zahlen/Tage">Zahlen & Tage</option>
 <option value="Essen/Trinken">Essen & Trinken</option>
-<option value="Verben">Aktionen / Verben</option>
+<option value="Verben">Verben</option>
 </select>
 <button class="btn btn-add" onclick="save()">SPEICHERN</button>
-<div class="dict-toggle" id="tglBtn" onclick="toggleDict()">WÖRTERBUCH ANZEIGEN</div>
-<div id="dictContent"><div id="dictionary" class="dict-container"></div></div>
+<button class="dict-toggle" id="tglBtn" onclick="toggleDict()">WÖRTERBUCH ANZEIGEN</button>
+<div id="dictContent">
+<div id="dictionary" class="dict-container"></div>
+<button onclick="forceImport()" style="margin-top:10px; font-size:0.6rem; background:none; border:none; color:blue; text-decoration:underline; cursor:pointer;">Alte Daten manuell suchen</button>
+</div>
 </div>
 
 <div class="card" id="learnArea" style="display:none;">
-<h2>2. Bewusstes Training</h2>
+<h2>2. Training</h2>
 <div id="q" style="font-size:1.5rem; text-align:center; font-weight:bold; margin:10px;"></div>
 <input type="text" id="ans" placeholder="Antwort..." onkeypress="if(event.key==='Enter') check()">
 <div id="feed" style="text-align:center; font-weight:bold; height:20px;"></div>
@@ -51,36 +55,42 @@ input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radiu
 
 <div class="card">
 <h2>3. Subliminal Flash (60ms)</h2>
-<div id="fBox" class="flash-box"><div id="fHr" class="flash-hr">START</div><div id="fDe" class="flash-de">bereit</div></div>
+<div id="fBox" class="flash-box">
+<div id="fHr" class="flash-hr">START</div>
+<div id="fDe" class="flash-de">bereit</div>
+</div>
 <button id="sBtn" class="btn btn-flash" onclick="run()">ULTRA-FLASH STARTEN</button>
 <button id="tBtn" class="btn btn-stop" onclick="stop()">STOPP</button>
 </div>
 
 <script>
-const KEY = 'masterDict_v4'; // Neuer Schlüssel für den Umzug
+const KEY = 'masterDict_final';
 let vocabs = JSON.parse(localStorage.getItem(KEY)) || [];
 
-// INTELLIGENTER IMPORT
-if(vocabs.length === 0) {
-['masterDict_v3', 'masterDict_v2', 'masterDict', 'simpleDict'].forEach(old => {
-let data = JSON.parse(localStorage.getItem(old));
-if(data) {
+function forceImport() {
+const oldKeys = ['masterDict_v4', 'masterDict_v3', 'masterDict_v2', 'masterDict', 'simpleDict'];
+let imported = false;
+oldKeys.forEach(k => {
+let data = JSON.parse(localStorage.getItem(k));
+if(data && data.length > 0) {
 data.forEach(item => {
-let d = item.de.toLowerCase();
-// Automatische Erkennung von Zahlen und Tagen
-const isZahlTag = /(eins|zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn|null|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|woche|tag|monat)/i;
-const isEssen = /(essen|trinken|wasser|brot|kaffee|tee|hunger|durst|apfel|fleisch)/i;
-let detectedCat = 'Allgemein';
-if(isZahlTag.test(d)) detectedCat = 'Zahlen/Tage';
-else if(isEssen.test(d)) detectedCat = 'Essen/Trinken';
-vocabs.push({hr: item.hr, de: item.de, cat: item.cat || detectedCat});
+if(!vocabs.find(v => v.hr === item.hr)) {
+vocabs.push({hr: item.hr, de: item.de, cat: item.cat || 'Allgemein'});
+imported = true;
+}
 });
 }
 });
-sortAndSave();
+if(imported) {
+saveState();
+alert("Daten wurden importiert!");
+location.reload();
+} else {
+alert("Keine alten Daten gefunden.");
+}
 }
 
-function sortAndSave() {
+function saveState() {
 vocabs.sort((a, b) => a.hr.localeCompare(b.hr));
 localStorage.setItem(KEY, JSON.stringify(vocabs));
 }
@@ -89,13 +99,26 @@ function save() {
 const h = document.getElementById('hrIn').value.trim(), d = document.getElementById('deIn').value.trim(), c = document.getElementById('catIn').value;
 if(!h || !d) return;
 vocabs.push({hr:h, de:d, cat:c});
-sortAndSave();
+saveState();
 location.reload();
+}
+
+function toggleDict() {
+const div = document.getElementById('dictContent');
+const btn = document.getElementById('tglBtn');
+if(div.style.display === 'block') {
+div.style.display = 'none';
+btn.innerText = 'WÖRTERBUCH ANZEIGEN';
+} else {
+div.style.display = 'block';
+btn.innerText = 'WÖRTERBUCH VERBERGEN';
+renderList();
+}
 }
 
 function renderList() {
 const container = document.getElementById('dictionary');
-container.innerHTML = ""
+container.innerHTML = vocabs.length === 0 ? "<div style='padding:10px; color:#ccc;'>Leer</div>" : ""
 const groups = vocabs.reduce((acc, obj) => { (acc[obj.cat] = acc[obj.cat] || []).push(obj); return acc; }, {});
 for (const cat in groups) {
 const h = document.createElement('div');
@@ -108,14 +131,6 @@ r.innerHTML = `<span><b>${v.hr}</b></span><span>${v.de}</span>`;
 container.appendChild(r);
 });
 }
-}
-
-function toggleDict() {
-const div = document.getElementById('dictContent'), btn = document.getElementById('tglBtn');
-const isShow = div.style.display === 'block';
-div.style.display = isShow ? 'none' : 'block';
-btn.innerText = isShow ? 'WÖRTERBUCH ANZEIGEN' : 'WÖRTERBUCH VERBERGEN';
-if(!isShow) renderList();
 }
 
 let cur = null, timer = null;
@@ -135,6 +150,7 @@ setTimeout(ask, 800);
 }
 
 function run() {
+if(vocabs.length === 0) return;
 document.getElementById('sBtn').style.display='none'; document.getElementById('tBtn').style.display='block';
 document.getElementById('fBox').classList.add('flash-active');
 timer = setInterval(() => {
