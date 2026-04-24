@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kroatisch Master v1.3.0</title>
+<title>Kroatisch Master v1.3.1</title>
 <style>
 :root { --hr-red: #ff0000; --hr-blue: #002395; --dark: #1a1a1a; --light-bg: #f4f7f6; --green: #28a745; }
 body { font-family: 'Segoe UI', sans-serif; background: var(--light-bg); display: flex; flex-direction: column; align-items: center; padding: 20px; color: var(--dark); }
 .container { max-width: 500px; width: 100%; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 20px; }
 h2 { text-align: center; color: var(--hr-blue); margin-top: 0; font-size: 1.5rem; }
 .section-title { font-size: 0.8rem; font-weight: bold; color: #aaa; text-transform: uppercase; margin-bottom: 12px; letter-spacing: 1px; }
-/* Eingabe */
 .input-group { display: flex; gap: 8px; margin-bottom: 12px; }
 input { flex: 1; padding: 12px; border: 2px solid #eee; border-radius: 10px; font-size: 0.9rem; outline: none; transition: 0.3s; }
 input:focus { border-color: var(--hr-blue); }
@@ -19,22 +18,15 @@ input:focus { border-color: var(--hr-blue); }
 .btn-green { background: var(--green); }
 .btn-flash { background: var(--dark); }
 .btn-stop { background: var(--hr-red); display: none; }
-.btn:active { transform: scale(0.98); }
-
-/* Wörterbuch Liste */
 .dict-list { max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 10px; margin-top: 10px; }
-.dict-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f9f9f9; cursor: pointer; transition: background 0.2s; }
+.dict-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f9f9f9; cursor: pointer; }
 .dict-item:hover { background: #f0f4ff; }
-.dict-item b { color: var(--hr-blue); }
-/* Display */
-.display-area { height: 160px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background: #fafafa; border-radius: 20px; margin: 15px 0; position: relative; overflow: hidden; }
-.hr-text { font-size: 2.2rem; font-weight: 800; color: var(--hr-blue); z-index: 2; }
-.de-text { font-size: 1.1rem; color: #888; z-index: 2; }
-
+.display-area { height: 160px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; background: #fafafa; border-radius: 20px; margin: 15px 0; overflow: hidden; }
+.hr-text { font-size: 2.2rem; font-weight: 800; color: var(--hr-blue); }
+.de-text { font-size: 1.1rem; color: #888; }
 .flash-active { background: #000 !important; }
 .flash-active .hr-text { color: #fff; font-size: 2.8rem; }
 .flash-active .de-text { color: #666; }
-
 .feedback { font-weight: bold; text-align: center; height: 20px; margin-top: 5px; }
 </style>
 </head>
@@ -48,32 +40,49 @@ input:focus { border-color: var(--hr-blue); }
 </div>
 <button class="btn btn-blue" onclick="addVocab()">Hinzufügen</button>
 <div class="section-title" style="margin-top: 20px;">Dein Wörterbuch (Klick für Audio)</div>
-<div id="dictionary" class="dict-list">
-</div>
+<div id="dictionary" class="dict-list"></div>
 <div style="text-align: right; margin-top: 8px;">
-<span style="color:#ccc; cursor:pointer; font-size: 0.7rem;" onclick="clearAll()">Kompletten Speicher löschen</span>
+<span style="color:#ccc; cursor:pointer; font-size: 0.7rem;" onclick="clearAll()">Speicher löschen</span>
 </div>
 </div>
 
 <div class="container">
-<div class="section-title">Lernbereich (Interaktiv)</div>
+<div class="section-title">Lernbereich</div>
 <div id="learnPrompt" style="text-align:center; font-size: 1.3rem; margin-bottom: 15px;">-</div>
-<input type="text" id="learnInput" placeholder="Antwort eingeben..." onkeypress="if(event.key==='Enter') checkLearn()">
+<input type="text" id="learnInput" placeholder="Antwort..." onkeypress="if(event.key==='Enter') checkLearn()">
 <div id="feedback" class="feedback"></div>
 </div>
 
 <div class="container">
-<div class="section-title">Brain-Sequenz (Endlos-Flash)</div>
+<div class="section-title">Brain-Sequenz (Endlos)</div>
 <div class="display-area" id="flashDisplay">
 <div id="displayHr" class="hr-text">START</div>
-<div id="displayDe" class="de-text">bereit für Flash</div>
+<div id="displayDe" class="de-text">bereit</div>
 </div>
-<button class="btn btn-flash" onclick="startFlash()" id="flashBtn">Start (0.2s Takt)</button>
+<button class="btn btn-flash" onclick="startFlash()" id="flashBtn">Start</button>
 <button class="btn btn-stop" onclick="stopFlash()" id="stopBtn">STOPP</button>
 </div>
 
 <script>
-let vocabList = JSON.parse(localStorage.getItem('myFullDict')) || [];
+// DATEN-IMPORT LOGIK
+function getInitialData() {
+// 1. Schau im neuen Speicher nach
+let data = JSON.parse(localStorage.getItem('myFullDict'));
+// 2. Falls leer, schau in den alten Speichern der Vorversionen nach
+if (!data || data.length === 0) {
+const oldDataManual = JSON.parse(localStorage.getItem('myVocabManual'));
+const oldDataDictionary = JSON.parse(localStorage.getItem('myDictionary'));
+data = oldDataManual || oldDataDictionary || [];
+// Wenn wir alte Daten gefunden haben, direkt im neuen Format speichern
+if (data.length > 0) {
+localStorage.setItem('myFullDict', JSON.stringify(data));
+console.log("Daten aus Vorversion erfolgreich importiert!");
+}
+}
+return data;
+}
+
+let vocabList = getInitialData();
 let currentItem = null;
 let flashInterval = null;
 
@@ -95,8 +104,8 @@ if(!currentItem) nextQuestion();
 
 function renderDictionary() {
 const dictDiv = document.getElementById('dictionary');
-dictDiv.innerHTML = vocabList.length === 0 ? '<div style="padding:10px; color:#ccc;">Noch keine Einträge...</div>' : '';
-vocabList.forEach((item, index) => {
+dictDiv.innerHTML = vocabList.length === 0 ? '<div style="padding:10px; color:#ccc;">Wörterbuch leer...</div>' : '';
+vocabList.forEach((item) => {
 const div = document.createElement('div');
 div.className = 'dict-item';
 div.onclick = () => speak(item.hr);
@@ -105,7 +114,6 @@ dictDiv.appendChild(div);
 });
 }
 
-// --- LERNEN ---
 function nextQuestion() {
 if(vocabList.length === 0) return;
 currentItem = vocabList[Math.floor(Math.random() * vocabList.length)];
@@ -117,24 +125,19 @@ document.getElementById('feedback').innerText = ""
 
 function checkLearn() {
 const val = document.getElementById('learnInput').value.trim().toLowerCase();
-const feedback = document.getElementById('feedback');
-const correctHr = currentItem.hr.toLowerCase();
-const correctDe = currentItem.de.toLowerCase();
-
-if(val === correctHr || val === correctDe) {
-feedback.style.color = "green"
-feedback.innerText = "Hervorragend!"
+if(val === currentItem.hr.toLowerCase() || val === currentItem.de.toLowerCase()) {
+document.getElementById('feedback').style.color = "green"
+document.getElementById('feedback').innerText = "Richtig!"
 speak(currentItem.hr);
-setTimeout(nextQuestion, 1200);
+setTimeout(nextQuestion, 1000);
 } else {
-feedback.style.color = "red"
-feedback.innerText = "Nicht ganz..."
+document.getElementById('feedback').style.color = "red"
+document.getElementById('feedback').innerText = "Versuch es nochmal"
 }
 }
 
-// --- FLASH ---
 function startFlash() {
-if(vocabList.length === 0) return alert("Wörterbuch ist leer!");
+if(vocabList.length === 0) return;
 document.getElementById('flashBtn').style.display = 'none';
 document.getElementById('stopBtn').style.display = 'block';
 document.getElementById('flashDisplay').classList.add('flash-active');
@@ -142,7 +145,7 @@ flashInterval = setInterval(() => {
 const randomItem = vocabList[Math.floor(Math.random() * vocabList.length)];
 document.getElementById('displayHr').innerText = randomItem.hr;
 document.getElementById('displayDe').innerText = randomItem.de;
-}, 200); // 0,2 Sekunden
+}, 200);
 }
 
 function stopFlash() {
@@ -150,26 +153,18 @@ clearInterval(flashInterval);
 document.getElementById('flashBtn').style.display = 'block';
 document.getElementById('stopBtn').style.display = 'none';
 document.getElementById('flashDisplay').classList.remove('flash-active');
-document.getElementById('displayHr').innerText = "PAUSE"
-document.getElementById('displayDe').innerText = "Sequenz gestoppt"
 }
 
-// --- TOOLS ---
 function speak(text) {
 window.speechSynthesis.cancel();
 const msg = new SpeechSynthesisUtterance(text);
 msg.lang = 'hr-HR';
-msg.rate = 0.9; // Etwas langsamer für bessere Klarheit
+msg.rate = 0.9;
 window.speechSynthesis.speak(msg);
 }
 
 function save() { localStorage.setItem('myFullDict', JSON.stringify(vocabList)); }
-function clearAll() {
-if(confirm("Alle Vokabeln löschen?")) {
-localStorage.clear();
-location.reload();
-}
-}
+function clearAll() { if(confirm("Alles löschen?")) { localStorage.clear(); location.reload(); } }
 </script>
 </body>
 </html>
