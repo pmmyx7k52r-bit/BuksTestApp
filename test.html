@@ -3,49 +3,49 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kroatisch Master v1.6.2 - REPAIR</title>
+<title>Kroatisch Master v1.6.3</title>
 <style>
 :root { --hr-blue: #002395; --hr-red: #ff0000; --bg: #f0f2f5; --green: #28a745; }
 body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 15px; }
 .card { max-width: 500px; width: 100%; background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 15px; box-sizing: border-box; }
-h2 { color: var(--hr-blue); font-size: 1.1rem; margin-top: 0; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+h2 { color: var(--hr-blue); font-size: 1rem; margin-top: 0; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
 input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; font-size: 1rem; }
 .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; margin-bottom: 5px; }
 .btn-add { background: var(--hr-blue); }
 .btn-green { background: var(--green); }
 .btn-flash { background: #000; }
 .btn-stop { background: var(--hr-red); display: none; }
+
 .dict-toggle { background: #eee; color: #555; padding: 8px; border-radius: 8px; text-align: center; cursor: pointer; font-size: 0.8rem; font-weight: bold; margin-bottom: 10px; }
 #dictContent { display: none; }
-.dict-container { max-height: 200px; overflow-y: auto; font-size: 0.9rem; border: 1px solid #eee; border-radius: 8px; padding: 5px; background: #fff; }
-.dict-entry { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f9f9f9; cursor: pointer; }
-.prompt { font-size: 1.4rem; text-align: center; margin: 15px 0; font-weight: bold; color: #333; }
+.dict-container { max-height: 150px; overflow-y: auto; font-size: 0.9rem; border: 1px solid #eee; border-radius: 8px; padding: 5px; background: #fff; }
+.dict-entry { display: flex; justify-content: space-between; padding: 6px; border-bottom: 1px solid #f9f9f9; }
+
+.prompt { font-size: 1.3rem; text-align: center; margin: 15px 0; font-weight: bold; color: #333; }
 .feedback { text-align: center; height: 20px; font-weight: bold; margin-bottom: 10px; }
-.flash-box { height: 140px; display: flex; justify-content: center; align-items: center; font-size: 2.2rem; font-weight: 900; color: var(--hr-blue); text-align: center; background: #fff; border: 4px solid #eee; border-radius: 10px; overflow: hidden; }
-.flash-active { background: #000 !important; color: #fff !important; }
-.import-msg { background: #fff3cd; color: #856404; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 0.8rem; border: 1px solid #ffeeba; display: none; }
+
+/* Optimierter Brain-Flash Bereich */
+.flash-box { height: 160px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; border: 4px solid #eee; border-radius: 12px; overflow: hidden; text-align: center; padding: 10px; }
+.flash-active { background: #000 !important; border-color: #222 !important; }
+.flash-hr { font-size: 2.2rem; font-weight: 900; color: var(--hr-blue); line-height: 1.1; }
+.flash-de { font-size: 1.1rem; color: #888; margin-top: 8px; }
+.flash-active .flash-hr { color: #fff; }
+.flash-active .flash-de { color: #555; }
 </style>
 </head>
 <body>
 
-<div id="importNotice" class="import-msg">Alte Wörter wurden gefunden und importiert!</div>
-
 <div class="card">
-<h2>1. Erfassung & Wörterbuch</h2>
+<h2>1. Wörterbuch</h2>
 <input type="text" id="hrIn" placeholder="Kroatisch">
 <input type="text" id="deIn" placeholder="Deutsch">
 <button class="btn btn-add" onclick="save()">Speichern</button>
-<div class="dict-toggle" onclick="toggleDict()">WÖRTERBUCH ANZEIGEN / VERBERGEN</div>
-<div id="dictContent">
-<div id="dictionary" class="dict-container"></div>
-<div style="text-align: right; margin-top: 5px;">
-<span style="color:#ccc; cursor:pointer; font-size: 0.7rem;" onclick="clearAll()">Löschen</span>
-</div>
-</div>
+<div class="dict-toggle" onclick="toggleDict()">ANZEIGEN / VERBERGEN</div>
+<div id="dictContent"><div id="dictionary" class="dict-container"></div></div>
 </div>
 
 <div class="card" id="learnCard" style="display:none;">
-<h2>2. Vokabel-Trainer</h2>
+<h2>2. Bewusstes Training</h2>
 <div id="learnPrompt" class="prompt">-</div>
 <div id="feedback" class="feedback"></div>
 <input type="text" id="learnInput" placeholder="Antwort..." onkeypress="if(event.key==='Enter') checkAnswer()">
@@ -53,49 +53,25 @@ input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; 
 </div>
 
 <div class="card">
-<h2>3. Brain-Programmierung</h2>
-<div id="flashDisplay" class="flash-box">START</div>
-<button id="startBtn" class="btn btn-flash" onclick="startFlash()">ULTRA-FLASH (0.1s)</button>
+<h2>3. Unterbewusstsein (0.06s)</h2>
+<div id="flashDisplay" class="flash-box">
+<div id="flashHr" class="flash-hr">START</div>
+<div id="flashDe" class="flash-de">bereit</div>
+</div>
+<button id="startBtn" class="btn btn-flash" onclick="startFlash()">SUBLIMINAL FLASH</button>
 <button id="stopBtn" class="btn btn-stop" onclick="stopFlash()">STOPP</button>
 </div>
 
 <script>
-// --- DATEN-RETTER FUNKTION ---
-function recoverData() {
-let current = JSON.parse(localStorage.getItem('masterDict')) || [];
-// Prüfe alte Speicherplätze
-const keys = ['myVocabManual', 'myDictionary', 'simpleDict', 'myFullDict'];
-let foundOld = false;
-
-keys.forEach(key => {
-const oldData = JSON.parse(localStorage.getItem(key));
-if (oldData && oldData.length > 0) {
-// Füge nur hinzu, was noch nicht da ist
-oldData.forEach(item => {
-if (!current.some(c => c.hr === item.hr)) {
-current.push(item);
-foundOld = true;
-}
-});
-}
-});
-
-if (foundOld) {
-localStorage.setItem('masterDict', JSON.stringify(current));
-document.getElementById('importNotice').style.display = 'block';
-}
-return current;
-}
-
-let vocabs = recoverData();
+let vocabs = JSON.parse(localStorage.getItem('masterDict')) || [];
 let currentTask = null;
 let flashTimer = null;
 
 updateUI();
 
 function toggleDict() {
-const content = document.getElementById('dictContent');
-content.style.display = (content.style.display === "block") ? "none" : "block"
+const c = document.getElementById('dictContent');
+c.style.display = (c.style.display === "block") ? "none" : "block"
 }
 
 function save() {
@@ -110,14 +86,13 @@ updateUI();
 }
 
 function updateUI() {
-const dict = document.getElementById('dictionary');
-dict.innerHTML = vocabs.length === 0 ? '<div style="color:#ccc; text-align:center; padding:10px;">Noch leer</div>' : ""
+const d = document.getElementById('dictionary');
+d.innerHTML = vocabs.length === 0 ? "Leer" : ""
 vocabs.forEach(v => {
 const row = document.createElement('div');
 row.className = "dict-entry"
-row.onclick = () => speak(v.hr);
 row.innerHTML = `<span><b>${v.hr}</b></span><span>${v.de}</span>`;
-dict.appendChild(row);
+d.appendChild(row);
 });
 if(vocabs.length > 0) {
 document.getElementById('learnCard').style.display = "block"
@@ -127,22 +102,21 @@ if(!currentTask) nextTask();
 
 function nextTask() {
 currentTask = vocabs[Math.floor(Math.random() * vocabs.length)];
-const mode = Math.random() > 0.5;
-document.getElementById('learnPrompt').innerText = mode ? currentTask.de : currentTask.hr;
+document.getElementById('learnPrompt').innerText = Math.random() > 0.5 ? currentTask.de : currentTask.hr;
 document.getElementById('learnInput').value = ""
 document.getElementById('feedback').innerText = ""
 }
 
 function checkAnswer() {
-const input = document.getElementById('learnInput').value.trim().toLowerCase();
-if(input === currentTask.hr.toLowerCase() || input === currentTask.de.toLowerCase()) {
-document.getElementById('feedback').style.color = "green"
-document.getElementById('feedback').innerText = "✓ Richtig"
+const i = document.getElementById('learnInput').value.trim().toLowerCase();
+const ok = (i === currentTask.hr.toLowerCase() || i === currentTask.de.toLowerCase());
+const f = document.getElementById('feedback');
+if(ok) {
+f.style.color = "green" f.innerText = "✓"
 speak(currentTask.hr);
-setTimeout(nextTask, 1000);
+setTimeout(nextTask, 800);
 } else {
-document.getElementById('feedback').style.color = "red"
-document.getElementById('feedback').innerText = "Falsch"
+f.style.color = "red" f.innerText = "×"
 }
 }
 
@@ -150,31 +124,30 @@ function startFlash() {
 if(vocabs.length === 0) return;
 document.getElementById('startBtn').style.display = "none"
 document.getElementById('stopBtn').style.display = "block"
-const disp = document.getElementById('flashDisplay');
-disp.classList.add('flash-active');
+document.getElementById('flashDisplay').classList.add('flash-active');
+// INTERVALL: 60ms für echte subliminale Programmierung
 flashTimer = setInterval(() => {
 const r = vocabs[Math.floor(Math.random() * vocabs.length)];
-disp.innerText = r.hr;
-}, 100);
+document.getElementById('flashHr').innerText = r.hr;
+document.getElementById('flashDe').innerText = r.de;
+}, 60);
 }
 
 function stopFlash() {
 clearInterval(flashTimer);
 document.getElementById('startBtn').style.display = "block"
 document.getElementById('stopBtn').style.display = "none"
-const disp = document.getElementById('flashDisplay');
-disp.classList.remove('flash-active');
-disp.innerText = "START"
+document.getElementById('flashDisplay').classList.remove('flash-active');
+document.getElementById('flashHr').innerText = "PAUSE"
+document.getElementById('flashDe').innerText = ""
 }
 
-function speak(txt) {
+function speak(t) {
 window.speechSynthesis.cancel();
-const m = new SpeechSynthesisUtterance(txt);
+const m = new SpeechSynthesisUtterance(t);
 m.lang = 'hr-HR';
 window.speechSynthesis.speak(m);
 }
-
-function clearAll() { if(confirm("Alles löschen?")) { localStorage.clear(); location.reload(); } }
 </script>
 </body>
 </html>
