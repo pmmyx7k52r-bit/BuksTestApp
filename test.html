@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Kroatisch Master v1.7.5</title>
+<title>Kroatisch Master v1.7.6</title>
 <style>
 :root { --hr-blue: #002395; --bg: #f0f2f5; --red: #ff4444; --green: #28a745; }
 body { font-family: sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; }
@@ -15,20 +15,19 @@ input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radiu
 .btn-flash { background: #000; }
 .btn-hint { background: #666; font-size: 0.8rem; }
 .btn-stop { background: var(--red); display: none; }
-.dict-toggle-btn { background: #eee; color: #333; padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; font-weight: bold; width: 100%; border: 1px solid #ccc; }
+/* Wörterbuch-Fix */
+.dict-toggle-btn { background: #eee; color: #333; padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; font-weight: bold; width: 100%; border: 1px solid #ccc; -webkit-tap-highlight-color: transparent; }
 #dictContent { display: none; margin-top: 10px; }
-.dict-list { max-height: 300px; overflow-y: auto; font-size: 0.9rem; }
+.dict-list { max-height: 350px; overflow-y: auto; font-size: 0.9rem; border-top: 1px solid #eee; }
 .cat-head { background: #e8e8e8; padding: 5px; font-weight: bold; font-size: 0.7rem; margin-top: 12px; border-radius: 4px; color: #444; border-left: 4px solid var(--hr-blue); }
-.entry { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
-.del-btn { color: var(--red); font-weight: bold; padding: 5px 10px; font-size: 0.8rem; cursor: pointer; border: 1px solid #ffcccc; border-radius: 5px; background: #fff5f5; }
+.entry { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+.del-btn { color: var(--red); font-size: 0.7rem; cursor: pointer; border: 1px solid #ffcccc; padding: 4px 8px; border-radius: 4px; background: #fff5f5; margin-left: 10px; flex-shrink: 0; }
 
-.flash-box { height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; border: 4px solid #eee; border-radius: 12px; text-align: center; position: relative; }
-.flash-active { background: #000 !important; color: #fff !important; border-color: #333; }
+.flash-box { height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; border: 4px solid #eee; border-radius: 12px; text-align: center; }
+.flash-active { background: #000 !important; color: #fff !important; }
 .flash-hr { font-size: 2.2rem; font-weight: 900; color: var(--hr-blue); }
 .flash-active .flash-hr { color: #fff; }
-.flash-de { font-size: 1.1rem; color: #888; margin-top: 5px; }
-#solutionHint { display: none; color: var(--red); text-align: center; font-weight: bold; margin: 10px 0; font-size: 1.2rem; background: #fff0f0; padding: 15px; border-radius: 8px; border: 1px solid var(--red); animation: pulse 1s infinite; }
-@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+#solutionHint { display: none; color: var(--red); text-align: center; font-weight: bold; margin: 10px 0; background: #fff0f0; padding: 15px; border-radius: 8px; border: 1px solid var(--red); }
 </style>
 </head>
 <body>
@@ -38,32 +37,34 @@ input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radiu
 <input type="text" id="hrIn" placeholder="Kroatisch">
 <input type="text" id="deIn" placeholder="Deutsch">
 <select id="catIn">
-<option value="Allgemein">Kategorie: Allgemein</option>
+<option value="Allgemein">Allgemein</option>
 <option value="Zahlen/Tage">Zahlen & Tage</option>
 <option value="Essen/Trinken">Essen & Trinken</option>
 <option value="Verben">Verben</option>
 </select>
 <button class="btn btn-add" onclick="saveWort()">SPEICHERN</button>
-<div class="dict-toggle-btn" id="tBtnLabel" onclick="toggleDictionary()">WÖRTERBUCH ANZEIGEN</div>
-<div id="dictContent"><div id="dictionaryList" class="dict-list"></div></div>
+<div class="dict-toggle-btn" id="tBtnLabel" onclick="safeToggle()">WÖRTERBUCH ANZEIGEN</div>
+<div id="dictContent">
+<div id="dictionaryList" class="dict-list"></div>
+</div>
 </div>
 
 <div class="card" id="trainArea" style="display:none;">
-<h2>2. Bewusstes Training</h2>
-<div id="question" style="font-size:1.5rem; text-align:center; font-weight:bold; margin:10px; color:#333;"></div>
+<h2>2. Training</h2>
+<div id="question" style="font-size:1.5rem; text-align:center; font-weight:bold; margin:10px;"></div>
 <div id="solutionHint"></div>
-<input type="text" id="answer" placeholder="Antwort eintippen..." onkeypress="if(event.key==='Enter') checkInput()">
+<input type="text" id="answer" placeholder="Antwort..." onkeypress="if(event.key==='Enter') checkInput()">
 <button id="hintBtn" class="btn btn-hint" onclick="showSolution()">WEISS ICH NICHT</button>
 <div id="feedback" style="text-align:center; height:20px; font-weight:bold; margin-top:5px;"></div>
 </div>
 
 <div class="card">
-<h2>3. Subliminal Flash (0.06s)</h2>
+<h2>3. Flash (0.06s)</h2>
 <div id="fBox" class="flash-box">
 <div id="fHr" class="flash-hr">START</div>
-<div id="fDe" class="flash-de">bereit</div>
+<div id="fDe" class="flash-de" style="color:#888;">bereit</div>
 </div>
-<button id="sBtn" class="btn btn-flash" onclick="startFlash()">ULTRA-FLASH STARTEN</button>
+<button id="sBtn" class="btn btn-flash" onclick="startFlash()">START</button>
 <button id="stopBtn" class="btn btn-stop" onclick="stopFlash()">STOPP</button>
 </div>
 
@@ -73,37 +74,63 @@ let daten = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
 let currentItem = null;
 let isLocked = false;
 
-function toggleDictionary() {
-const c = document.getElementById('dictContent');
-const b = document.getElementById('tBtnLabel');
-const isShow = c.style.display === 'block';
-c.style.display = isShow ? 'none' : 'block';
-b.innerText = isShow ? 'WÖRTERBUCH ANZEIGEN' : 'WÖRTERBUCH VERBERGEN';
-if(!isShow) renderList();
+// SICHERER TOGGLE
+function safeToggle() {
+const content = document.getElementById('dictContent');
+const label = document.getElementById('tBtnLabel');
+if (content.style.display === 'block') {
+content.style.display = 'none';
+label.innerText = 'WÖRTERBUCH ANZEIGEN';
+} else {
+try {
+renderList();
+content.style.display = 'block';
+label.innerText = 'WÖRTERBUCH VERBERGEN';
+} catch (e) {
+alert("Fehler beim Laden des Wörterbuchs. Bitte Seite neu laden.");
+console.error(e);
+}
+}
 }
 
 function renderList() {
 const list = document.getElementById('dictionaryList');
-if (daten.length === 0) { list.innerHTML = "<p style='text-align:center; color:#ccc;'>Noch keine Wörter vorhanden.</p>" return; }
-daten.sort((a, b) => a.cat.localeCompare(b.cat) || a.hr.localeCompare(b.hr));
-let html = "", lastCat = ""
-daten.forEach((item, index) => {
-if(item.cat !== lastCat) {
-html += `<div class="cat-head">${item.cat.toUpperCase()}</div>`;
-lastCat = item.cat;
+if (daten.length === 0) {
+list.innerHTML = "<p style='padding:10px; color:#999;'>Keine Einträge.</p>"
+return;
 }
-html += `<div class="entry">
+
+// Sortierung: Kategorie -> Alphabetisch
+let sortierteDaten = [...daten].sort((a, b) => {
+let catComp = a.cat.localeCompare(b.cat);
+if (catComp !== 0) return catComp;
+return a.hr.localeCompare(b.hr);
+});
+
+let html = ""
+let currentCat = ""
+sortierteDaten.forEach((item) => {
+if (item.cat !== currentCat) {
+html += `<div class="cat-head">${item.cat.toUpperCase()}</div>`;
+currentCat = item.cat;
+}
+// Wir suchen den originalen Index für die Löschfunktion
+const originalIndex = daten.findIndex(d => d.hr === item.hr && d.de === item.de);
+html += `
+<div class="entry">
 <span><b>${item.hr}</b> - ${item.de}</span>
-<div class="del-btn" onclick="deleteEntry(${index})">Löschen</div>
+<span class="del-btn" onclick="deleteEntry(${originalIndex})">Löschen</span>
 </div>`;
 });
 list.innerHTML = html;
 }
 
 function deleteEntry(index) {
-if(confirm("Dieses Wort wirklich löschen?")) {
+if (confirm("Dieses Wort wirklich löschen?")) {
 daten.splice(index, 1);
-saveAndReload();
+localStorage.setItem(STORAGE_KEY, JSON.stringify(daten));
+renderList(); // Sofortige Aktualisierung ohne Reload
+if (daten.length === 0) location.reload();
 }
 }
 
@@ -113,16 +140,12 @@ const d = document.getElementById('deIn').value.trim();
 const c = document.getElementById('catIn').value;
 if (!h || !d) return;
 daten.push({hr: h, de: d, cat: c});
-saveAndReload();
-}
-
-function saveAndReload() {
 localStorage.setItem(STORAGE_KEY, JSON.stringify(daten));
 location.reload();
 }
 
 function nextQuestion() {
-if(daten.length === 0) return;
+if (daten.length === 0) return;
 isLocked = false;
 document.getElementById('answer').disabled = false;
 document.getElementById('hintBtn').style.display = 'block';
@@ -137,7 +160,7 @@ document.getElementById('answer').focus();
 function showSolution() {
 isLocked = true;
 const hintDiv = document.getElementById('solutionHint');
-hintDiv.innerText = `MERKEN: ${currentItem.hr} = ${currentItem.de}`;
+hintDiv.innerText = `Lösung: ${currentItem.hr} = ${currentItem.de}`;
 hintDiv.style.display = 'block';
 document.getElementById('answer').disabled = true;
 document.getElementById('hintBtn').style.display = 'none';
@@ -145,13 +168,13 @@ setTimeout(() => {
 hintDiv.style.display = 'none';
 document.getElementById('answer').disabled = false;
 document.getElementById('answer').focus();
-document.getElementById('feedback').innerText = "Jetzt eintippen!"
+document.getElementById('feedback').innerText = "Bitte eintippen!"
 isLocked = false;
 }, 5000);
 }
 
 function checkInput() {
-if(isLocked) return;
+if (isLocked) return;
 const val = document.getElementById('answer').value.trim().toLowerCase();
 if (val === currentItem.hr.toLowerCase() || val === currentItem.de.toLowerCase()) {
 document.getElementById('feedback').style.color = "green"
