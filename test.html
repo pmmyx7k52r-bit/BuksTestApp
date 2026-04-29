@@ -3,99 +3,94 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Intuition & Drittes Auge Trainer</title>
+<title>Intuitions-Trainer</title>
 <style>
-body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e9e9e9; text-align: center; margin: 0; padding: 20px; }
-.container { max-width: 500px; margin: auto; }
-h1 { color: #8d5cf6; }
-.module { background: #16213e; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #4831d4; }
-button { background: #4831d4; color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer; font-size: 16px; margin: 10px; transition: 0.3s; }
-button:hover { background: #8d5cf6; }
-#colorDisplay { width: 100%; height: 200px; border-radius: 15px; margin: 20px 0; background: #2e2e4e; border: 3px dashed #4831d4; display: flex; align-items: center; justify-content: center; font-size: 1.2em; }
+:root { --main-blue: #0a2394; --gold: #f1b04c; --bg: #f8f9fa; }
+body { font-family: 'Segoe UI', sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; }
+.card { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 350px; padding: 25px; text-align: center; }
+.timer-display { font-size: 3rem; font-weight: bold; color: var(--main-blue); margin: 20px 0; }
+.status-text { color: #888; text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem; }
+.field { background: #f0f2f5; border-radius: 12px; padding: 20px; margin: 15px 0; min-height: 50px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: 0.5s; }
+button { width: 100%; padding: 15px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; margin: 5px 0; }
+.btn-start { background: var(--main-blue); color: white; font-size: 1.1rem; }
+.btn-check { background: var(--gold); color: white; }
+button:active { transform: scale(0.98); }
 .hidden { display: none; }
-.stats { font-size: 0.9em; color: #aaa; }
 </style>
 </head>
 <body>
 
-<div class="container">
-<h1>Ajna Trainer</h1>
-<p>Der goldene Weg zum inneren Sehen</p>
+<div class="card">
+<div class="status-text" id="status">Bereit</div>
+<div class="timer-display" id="timer">00</div>
 
-<div class="module">
-<h3>1. Vorbereitung (Alpha-Wellen)</h3>
-<p>Schließe die Augen und harmonisiere deinen Geist.</p>
-<button onclick="toggleAudio()">Alpha-Sound Start/Stop</button>
+<div class="field" id="mainField">---</div>
+
+<div id="setupControls">
+<button class="btn-start" onclick="startTraining()">START (TIMER)</button>
 </div>
 
-<div class="module">
-<h3>2. Intuitions-Training</h3>
-<p>Welche Farbe liegt "hinter" dem Schleier?</p>
-<div id="colorDisplay">Konzentriere dich...</div>
-<div id="controls">
-<button onclick="startTest()">Farbe generieren</button>
-</div>
-<div id="guessButtons" class="hidden">
-<p>Was nimmst du wahr?</p>
-<button onclick="checkGuess('Rot')" style="background:#e94560;">Rot</button>
-<button onclick="checkGuess('Blau')" style="background:#0f3460;">Blau</button>
-<button onclick="checkGuess('Grün')" style="background:#28a745;">Grün</button>
-</div>
-<p class="stats">Treffer: <span id="score">0</span> / Versuche: <span id="total">0</span></p>
+<div id="actionControls" class="hidden">
+<button class="btn-check" onclick="reveal()">JETZT PRÜFEN</button>
 </div>
 </div>
 
 <script>
+let timeLeft = 10;
+let timerInterval;
 let currentColor = ""
-let score = 0;
-let total = 0;
-let audioCtx = null;
-let oscillator = null;
+const colors = ["ROT", "BLAU", "GRÜN", "GELB"];
 
-// --- MODUL 1: AUDIO (ALPHA WELLEN SIMULATION) ---
-function toggleAudio() {
-if (!audioCtx) {
-audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-oscillator = audioCtx.createOscillator();
-let gainNode = audioCtx.createGain();
-oscillator.type = 'sine';
-oscillator.frequency.setValueAtTime(10, audioCtx.currentTime); // 10Hz Alpha Bereich
-gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-oscillator.connect(gainNode);
-gainNode.connect(audioCtx.destination);
-oscillator.start();
-} else {
-audioCtx.close();
-audioCtx = null;
-}
+// Audio-Initialisierung
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function beep(freq, duration) {
+const osc = audioCtx.createOscillator();
+const gain = audioCtx.createGain();
+osc.connect(gain);
+gain.connect(audioCtx.destination);
+osc.frequency.value = freq;
+gain.gain.value = 0.1;
+osc.start();
+setTimeout(() => osc.stop(), duration);
 }
 
-// --- MODUL 2: FARB-TEST ---
-function startTest() {
-const colors = ["Rot", "Blau", "Grün"];
+function startTraining() {
+// Reset
+timeLeft = 10;
+document.getElementById('timer').innerText = timeLeft;
+document.getElementById('status').innerText = "Konzentration..."
+document.getElementById('mainField').innerText = "Fühle die Farbe"
+document.getElementById('mainField').style.backgroundColor = "#f0f2f5"
+// Farbe im Hintergrund wählen
 currentColor = colors[Math.floor(Math.random() * colors.length)];
-document.getElementById('colorDisplay').style.background = "#2e2e4e"
-document.getElementById('colorDisplay').innerText = "Wahrnehmung läuft..."
-document.getElementById('guessButtons').classList.remove('hidden');
-document.getElementById('controls').classList.add('hidden');
+// UI umschalten
+document.getElementById('setupControls').classList.add('hidden');
+document.getElementById('actionControls').classList.remove('hidden');
+
+beep(440, 200); // Start-Ton
+
+// Timer starten
+timerInterval = setInterval(() => {
+timeLeft--;
+document.getElementById('timer').innerText = (timeLeft < 10 ? "0" : "") + timeLeft;
+if (timeLeft <= 0) {
+clearInterval(timerInterval);
+document.getElementById('status').innerText = "Zeit abgelaufen!"
+beep(660, 400); // Ende-Ton
+}
+}, 1000);
 }
 
-function checkGuess(guess) {
-total++;
-const display = document.getElementById('colorDisplay');
-const colorMap = { "Rot": "#e94560", "Blau": "#0f3460", "Grün": "#28a745" };
-display.style.background = colorMap[currentColor];
-if (guess === currentColor) {
-score++;
-display.innerText = "Richtig! Die Farbe ist " + currentColor;
-} else {
-display.innerText = "Falsch. Es war " + currentColor;
-}
-
-document.getElementById('score').innerText = score;
-document.getElementById('total').innerText = total;
-document.getElementById('guessButtons').classList.add('hidden');
-document.getElementById('controls').classList.remove('hidden');
+function reveal() {
+clearInterval(timerInterval);
+const field = document.getElementById('mainField');
+field.innerText = currentColor;
+const colorMap = {"ROT": "#ff4d4d", "BLAU": "#4d94ff", "GRÜN": "#4dff88", "GELB": "#ffff4d"};
+field.style.backgroundColor = colorMap[currentColor];
+document.getElementById('status').innerText = "Ergebnis"
+document.getElementById('setupControls').classList.remove('hidden');
+document.getElementById('actionControls').classList.add('hidden');
+document.getElementById('timer').innerText = "00"
 }
 </script>
 
