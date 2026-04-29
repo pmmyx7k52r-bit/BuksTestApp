@@ -2,326 +2,101 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Kroatisch Master v1.8.4</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Intuition & Drittes Auge Trainer</title>
 <style>
-:root { --hr-blue: #002395; --bg: #f0f2f5; --red: #ff4444; --green: #28a745; }
-body { font-family: sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 10px; margin: 0; }
-.card { max-width: 500px; width: 100%; background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 10px; box-sizing: border-box; }
-h2 { color: var(--hr-blue); font-size: 0.9rem; margin: 0 0 10px 0; text-transform: uppercase; border-bottom: 1px solid #eee; }
-input, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 8px; box-sizing: border-box; font-size: 1rem; }
-.btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: white; margin-bottom: 5px; font-size: 1rem; }
-.btn-add { background: var(--hr-blue); }
-.btn-flash { background: #000; }
-.btn-hint { background: #666; }
-.btn-stop { background: var(--red); display: none; }
-.dict-toggle-btn { background: #eee; color: #333; padding: 12px; border-radius: 8px; text-align: center; cursor: pointer; font-weight: bold; width: 100%; border: 1px solid #ccc; box-sizing: border-box; }
-#dictContent { display: none; margin-top: 10px; width: 100%; }
-.dict-list { max-height: 350px; overflow-y: auto; }
-.cat-head { background: #e8e8e8; padding: 6px; font-weight: bold; font-size: 0.7rem; margin-top: 10px; border-radius: 4px; color: #444; border-left: 4px solid var(--hr-blue); }
-.entry { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 0.9rem; }
-.del-btn { color: var(--red); font-size: 0.7rem; cursor: pointer; padding: 4px 8px; }
-.flash-box { height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fff; border: 4px solid #eee; border-radius: 12px; text-align: center; }
-.flash-active { background: #000 !important; color: #fff !important; }
-.flash-hr { font-size: 2.2rem; font-weight: 900; color: var(--hr-blue); }
-#solutionDisplay { display: none; color: var(--red); text-align: center; font-weight: bold; margin: 10px 0; background: #fff0f0; padding: 15px; border-radius: 8px; border: 1px solid var(--red); font-size: 1.1rem; }
-.rescue-link { font-size: 0.7rem; color: blue; text-decoration: underline; cursor: pointer; display: block; text-align: center; margin-top: 10px; }
-/* Neu: Styling für anklickbare Wörter */
-.speak-item { cursor: pointer; display: inline-block; padding: 2px 0; }
-.speak-item:active { background: #f0f0f0; border-radius: 4px; }
+body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #e9e9e9; text-align: center; margin: 0; padding: 20px; }
+.container { max-width: 500px; margin: auto; }
+h1 { color: #8d5cf6; }
+.module { background: #16213e; padding: 20px; border-radius: 15px; margin-bottom: 20px; border: 1px solid #4831d4; }
+button { background: #4831d4; color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer; font-size: 16px; margin: 10px; transition: 0.3s; }
+button:hover { background: #8d5cf6; }
+#colorDisplay { width: 100%; height: 200px; border-radius: 15px; margin: 20px 0; background: #2e2e4e; border: 3px dashed #4831d4; display: flex; align-items: center; justify-content: center; font-size: 1.2em; }
+.hidden { display: none; }
+.stats { font-size: 0.9em; color: #aaa; }
 </style>
 </head>
 <body>
 
-<div class="card">
-<h2>1. Eingabe &amp; Wörterbuch</h2>
-<input type="text" id="hrIn" placeholder="Kroatisch">
-<input type="text" id="deIn" placeholder="Deutsch">
-<select id="catIn">
-<option value="Allgemein">Allgemein</option>
-<option value="Zahlen/Tage">Zahlen &amp; Tage</option>
-<option value="Essen/Trinken">Essen &amp; Trinken</option>
-<option value="Verben">Verben</option>
-</select>
-<div id="voice-status" style="font-size:0.75rem; margin-bottom:8px; padding:6px; background:#f8f8f8; border-radius:6px;">Stimme wird geprüft...</div>
-<button type="button" id="btnSave" class="btn btn-add">SPEICHERN</button>
-<div class="dict-toggle-btn" id="tBtnLabel">WÖRTERBUCH ANZEIGEN</div>
-<div id="dictContent">
-<div id="dictionaryList" class="dict-list"></div>
-<span class="rescue-link" id="btnRescue">Daten-Rettung erzwingen</span>
-</div>
+<div class="container">
+<h1>Ajna Trainer</h1>
+<p>Der goldene Weg zum inneren Sehen</p>
+
+<div class="module">
+<h3>1. Vorbereitung (Alpha-Wellen)</h3>
+<p>Schließe die Augen und harmonisiere deinen Geist.</p>
+<button onclick="toggleAudio()">Alpha-Sound Start/Stop</button>
 </div>
 
-<div class="card" id="trainArea" style="display:none;">
-<h2>2. Training</h2>
-<div id="question" style="font-size:1.5rem; text-align:center; font-weight:bold; margin:10px;"></div>
-<div id="solutionDisplay"></div>
-<input type="text" id="answer" placeholder="Antwort...">
-<button type="button" id="hintBtn" class="btn btn-hint">WEISS ICH NICHT</button>
-<div id="feedback" style="text-align:center; height:20px; font-weight:bold; margin-top:5px;"></div>
+<div class="module">
+<h3>2. Intuitions-Training</h3>
+<p>Welche Farbe liegt "hinter" dem Schleier?</p>
+<div id="colorDisplay">Konzentriere dich...</div>
+<div id="controls">
+<button onclick="startTest()">Farbe generieren</button>
 </div>
-
-<div class="card">
-<h2>3. Flash</h2>
-<div id="fBox" class="flash-box">
-<div id="fHr" class="flash-hr">START</div>
-<div id="fDe" style="color:#888;">bereit</div>
+<div id="guessButtons" class="hidden">
+<p>Was nimmst du wahr?</p>
+<button onclick="checkGuess('Rot')" style="background:#e94560;">Rot</button>
+<button onclick="checkGuess('Blau')" style="background:#0f3460;">Blau</button>
+<button onclick="checkGuess('Grün')" style="background:#28a745;">Grün</button>
 </div>
-<button type="button" id="sBtn" class="btn btn-flash">START</button>
-<button type="button" id="stopBtn" class="btn btn-stop">STOPP</button>
+<p class="stats">Treffer: <span id="score">0</span> / Versuche: <span id="total">0</span></p>
+</div>
 </div>
 
 <script>
-var STORAGE_KEY = 'kroatisch_master_final_v1';
-var daten = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
-var currentItem = null;
-var currentQuestionMode = ""
-var isLocked = false;
-var flashInterval = null;
-var hrVoice = null;
+let currentColor = ""
+let score = 0;
+let total = 0;
+let audioCtx = null;
+let oscillator = null;
 
-function initVoices() {
-if (!window.speechSynthesis) { return; }
-var voices = window.speechSynthesis.getVoices();
-hrVoice = findHrVoice(voices);
-if (!hrVoice) {
-setTimeout(function() {
-voices = window.speechSynthesis.getVoices();
-hrVoice = findHrVoice(voices);
-showVoiceStatus();
-}, 500);
-}
-showVoiceStatus();
-}
-
-function findHrVoice(voices) {
-for (var i = 0; i < voices.length; i++) {
-var lang = voices[i].lang.replace('_', '-');
-if (lang === 'hr-HR' || lang === 'hr') { return voices[i]; }
-}
-return null;
-}
-
-function showVoiceStatus() {
-var el = document.getElementById('voice-status');
-if (!el) { return; }
-if (hrVoice) {
-el.style.color = '#28a745';
-el.innerText = '✓ Kroatisch: ' + hrVoice.name;
+// --- MODUL 1: AUDIO (ALPHA WELLEN SIMULATION) ---
+function toggleAudio() {
+if (!audioCtx) {
+audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+oscillator = audioCtx.createOscillator();
+let gainNode = audioCtx.createGain();
+oscillator.type = 'sine';
+oscillator.frequency.setValueAtTime(10, audioCtx.currentTime); // 10Hz Alpha Bereich
+gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+oscillator.connect(gainNode);
+gainNode.connect(audioCtx.destination);
+oscillator.start();
 } else {
-el.style.color = '#e67e22';
-el.innerText = '⚠ Stimme fehlt (siehe Anleitung)';
+audioCtx.close();
+audioCtx = null;
 }
 }
 
-function speakHr(text) {
-if (!window.speechSynthesis) { return; }
-window.speechSynthesis.cancel(); // Stoppt laufende Ansagen
-var msg = new SpeechSynthesisUtterance(text);
-if (hrVoice) {
-msg.voice = hrVoice;
-msg.lang = hrVoice.lang;
+// --- MODUL 2: FARB-TEST ---
+function startTest() {
+const colors = ["Rot", "Blau", "Grün"];
+currentColor = colors[Math.floor(Math.random() * colors.length)];
+document.getElementById('colorDisplay').style.background = "#2e2e4e"
+document.getElementById('colorDisplay').innerText = "Wahrnehmung läuft..."
+document.getElementById('guessButtons').classList.remove('hidden');
+document.getElementById('controls').classList.add('hidden');
+}
+
+function checkGuess(guess) {
+total++;
+const display = document.getElementById('colorDisplay');
+const colorMap = { "Rot": "#e94560", "Blau": "#0f3460", "Grün": "#28a745" };
+display.style.background = colorMap[currentColor];
+if (guess === currentColor) {
+score++;
+display.innerText = "Richtig! Die Farbe ist " + currentColor;
 } else {
-msg.lang = 'hr-HR';
-}
-msg.rate = 0.85;
-window.speechSynthesis.speak(msg);
+display.innerText = "Falsch. Es war " + currentColor;
 }
 
-function checkVisibility() {
-if (daten.length > 0) {
-document.getElementById('trainArea').style.display = 'block';
-if (!currentItem) { nextQuestion(); }
-} else {
-document.getElementById('trainArea').style.display = 'none';
+document.getElementById('score').innerText = score;
+document.getElementById('total').innerText = total;
+document.getElementById('guessButtons').classList.add('hidden');
+document.getElementById('controls').classList.remove('hidden');
 }
-}
-
-function toggleDict() {
-var content = document.getElementById('dictContent');
-var label = document.getElementById('tBtnLabel');
-var isOpen = content.style.display === 'block';
-content.style.display = isOpen ? 'none' : 'block';
-label.innerText = isOpen ? 'WÖRTERBUCH ANZEIGEN' : 'WÖRTERBUCH VERBERGEN';
-if (!isOpen) { renderList(); }
-}
-
-function renderList() {
-var list = document.getElementById('dictionaryList');
-if (daten.length === 0) {
-list.innerHTML = "<p style='text-align:center; color:#999;'>Leer</p>"
-return;
-}
-var sortierte = daten.slice().sort(function(a, b) {
-var ca = a.cat || "Allgemein"
-var cb = b.cat || "Allgemein"
-if (ca < cb) { return -1; }
-if (ca > cb) { return 1; }
-return a.hr.localeCompare(b.hr, 'hr');
-});
-var html = ""
-var lastCat = ""
-for (var i = 0; i < sortierte.length; i++) {
-var item = sortierte[i];
-if (item.cat !== lastCat) {
-html += '<div class="cat-head">' + (item.cat || "Allgemein").toUpperCase() + '</div>';
-lastCat = item.cat;
-}
-var idx = -1;
-for (var j = 0; j < daten.length; j++) {
-if (daten[j].hr === item.hr && daten[j].de === item.de) { idx = j; break; }
-}
-// Kroatisches Wort als anklickbares Element für Sprache
-html += '<div class="entry">'
-+ '<span><span class="speak-item" data-text="' + item.hr + '"><b>' + item.hr + '</b></span> - ' + item.de + ' 🔊</span>'
-+ '<span class="del-btn" data-idx="' + idx + '">❌</span></div>';
-}
-list.innerHTML = html;
-
-// Listeners für Löschen
-var delBtns = list.getElementsByClassName('del-btn');
-for (var k = 0; k < delBtns.length; k++) {
-delBtns[k].addEventListener('click', function(e) {
-e.stopPropagation();
-deleteEntry(parseInt(this.getAttribute('data-idx'), 10));
-});
-}
-// Listeners für Aussprache im Wörterbuch
-var speakItems = list.getElementsByClassName('speak-item');
-for (var s = 0; s < speakItems.length; s++) {
-speakItems[s].addEventListener('click', function() {
-speakHr(this.getAttribute('data-text'));
-});
-}
-}
-
-function emergencyImport() {
-var keys = ['masterDict_final', 'kroatisch_master_final_v1', 'masterDict_v4'];
-var found = false;
-for (var i = 0; i < keys.length; i++) {
-var old = JSON.parse(localStorage.getItem(keys[i]));
-if (old && Array.isArray(old)) {
-for (var j = 0; j < old.length; j++) {
-var o = old[j];
-var exists = false;
-for (var k = 0; k < daten.length; k++) {
-if (daten[k].hr === o.hr) { exists = true; break; }
-}
-if (!exists) {
-daten.push({hr: o.hr, de: o.de, cat: o.cat || "Allgemein"});
-found = true;
-}
-}
-}
-}
-if (found) {
-localStorage.setItem(STORAGE_KEY, JSON.stringify(daten));
-location.reload();
-} else {
-alert("Keine alten Daten gefunden.");
-}
-}
-
-function deleteEntry(i) {
-if (confirm("Löschen?")) {
-daten.splice(i, 1);
-localStorage.setItem(STORAGE_KEY, JSON.stringify(daten));
-renderList();
-checkVisibility();
-}
-}
-
-function saveWort() {
-var h = document.getElementById('hrIn').value.trim();
-var d = document.getElementById('deIn').value.trim();
-var c = document.getElementById('catIn').value;
-if (!h || !d) { return; }
-daten.push({hr: h, de: d, cat: c});
-localStorage.setItem(STORAGE_KEY, JSON.stringify(daten));
-location.reload();
-}
-
-function nextQuestion() {
-if (daten.length === 0) { return; }
-isLocked = false;
-document.getElementById('answer').disabled = false;
-document.getElementById('solutionDisplay').style.display = 'none';
-document.getElementById('feedback').innerText = ""
-currentItem = daten[Math.floor(Math.random() * daten.length)];
-currentQuestionMode = Math.random() > 0.5 ? "hr" : "de"
-document.getElementById('question').innerText = currentQuestionMode === "hr" ? currentItem.de : currentItem.hr;
-document.getElementById('answer').value = ""
-document.getElementById('answer').focus();
-}
-
-function handleWrong() {
-isLocked = true;
-var solDiv = document.getElementById('solutionDisplay');
-var correctText = currentQuestionMode === "hr" ? currentItem.hr : currentItem.de;
-solDiv.innerHTML = 'Lösung:<br><span style="font-size:1.4rem;">' + correctText + '</span>';
-solDiv.style.display = 'block';
-document.getElementById('answer').disabled = true;
-if (currentQuestionMode === "hr") { speakHr(currentItem.hr); }
-setTimeout(function() {
-solDiv.style.display = 'none';
-document.getElementById('answer').disabled = false;
-document.getElementById('answer').focus();
-document.getElementById('feedback').style.color = "blue"
-document.getElementById('feedback').innerText = "Jetzt eintippen!"
-isLocked = false;
-}, 3000);
-}
-
-function checkInput() {
-if (isLocked) { return; }
-var input = document.getElementById('answer').value.trim().toLowerCase();
-var correct = (currentQuestionMode === "hr" ? currentItem.hr : currentItem.de).toLowerCase();
-if (input === correct) {
-document.getElementById('feedback').style.color = "green"
-document.getElementById('feedback').innerText = "✓ Richtig!"
-if (currentQuestionMode === "hr") { speakHr(currentItem.hr); }
-setTimeout(nextQuestion, 1000);
-} else {
-handleWrong();
-}
-}
-
-function startFlash() {
-if (daten.length === 0) { return; }
-document.getElementById('sBtn').style.display = 'none';
-document.getElementById('stopBtn').style.display = 'block';
-document.getElementById('fBox').classList.add('flash-active');
-flashInterval = setInterval(function() {
-var r = daten[Math.floor(Math.random() * daten.length)];
-document.getElementById('fHr').innerText = r.hr;
-document.getElementById('fDe').innerText = r.de;
-}, 60);
-}
-
-function stopFlash() {
-clearInterval(flashInterval);
-document.getElementById('sBtn').style.display = 'block';
-document.getElementById('stopBtn').style.display = 'none';
-document.getElementById('fBox').classList.remove('flash-active');
-}
-
-// Event Listener
-document.getElementById('btnSave').addEventListener('click', function() { saveWort(); });
-document.getElementById('tBtnLabel').addEventListener('click', function() { toggleDict(); });
-document.getElementById('btnRescue').addEventListener('click', function() { emergencyImport(); });
-document.getElementById('hintBtn').addEventListener('click', function() { handleWrong(); });
-document.getElementById('sBtn').addEventListener('click', function() { startFlash(); });
-document.getElementById('stopBtn').addEventListener('click', function() { stopFlash(); });
-document.getElementById('answer').addEventListener('keypress', function(e) {
-if (e.key === 'Enter') { checkInput(); }
-});
-
-// Init
-if (window.speechSynthesis && window.speechSynthesis.onvoiceschanged !== undefined) {
-window.speechSynthesis.onvoiceschanged = function() { initVoices(); };
-}
-initVoices();
-checkVisibility();
 </script>
 
 </body>
